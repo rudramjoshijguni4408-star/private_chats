@@ -46,14 +46,13 @@ export function VideoCall({
   const iceCandidateQueue = useRef<RTCIceCandidateInit[]>([]);
   const remoteDescriptionSet = useRef(false);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      if (!isConnecting) {
-        setCallDuration((prev) => prev + 1);
+    useEffect(() => {
+      if (remoteStream && userVideo.current) {
+        userVideo.current.srcObject = remoteStream;
+        userVideo.current.play().catch(e => console.error("Remote playback failed:", e));
       }
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [isConnecting]);
+    }, [remoteStream]);
+
 
   const processQueuedCandidates = async (pc: RTCPeerConnection) => {
     while (iceCandidateQueue.current.length > 0) {
@@ -88,9 +87,28 @@ export function VideoCall({
     pc.ontrack = (event) => {
       const [remoteStreamFromEvent] = event.streams;
       setRemoteStream(remoteStreamFromEvent);
+      
+      // Separate handling for audio and video
+      event.track.onunmute = () => {
+        if (event.track.kind === 'audio') {
+          const remoteAudio = document.getElementById('remote-audio') as HTMLAudioElement;
+          if (remoteAudio) {
+            remoteAudio.srcObject = remoteStreamFromEvent;
+            remoteAudio.play().catch(e => console.error("Audio auto-play failed:", e));
+          }
+        }
+        
+        if (userVideo.current) {
+          userVideo.current.srcObject = remoteStreamFromEvent;
+          userVideo.current.play().catch(e => console.error("Video auto-play failed:", e));
+        }
+      };
+
       if (userVideo.current) {
         userVideo.current.srcObject = remoteStreamFromEvent;
+        userVideo.current.play().catch(e => console.error("Auto-play failed:", e));
       }
+      
       setIsConnecting(false);
       setConnectionStatus("Connected");
     };
@@ -397,13 +415,16 @@ export function VideoCall({
     );
   }
 
-  return (
-    <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="fixed inset-0 z-[100] bg-[#050505] flex flex-col items-center justify-center p-4 sm:p-8 md:p-12 overflow-hidden"
-    >
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+    return (
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="fixed inset-0 z-[100] bg-[#050505] flex flex-col items-center justify-center p-4 sm:p-8 md:p-12 overflow-hidden"
+      >
+        <audio id="remote-audio" autoPlay playsInline style={{ display: 'none' }} />
+        
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+
         <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-indigo-500/5 blur-[180px] rounded-full animate-pulse" />
         <div className="absolute bottom-0 left-0 w-[800px] h-[800px] bg-blue-500/5 blur-[180px] rounded-full animate-pulse delay-1000" />
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 contrast-150" />

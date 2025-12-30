@@ -42,12 +42,18 @@ export default function Home() {
     trackPresence();
 
     const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
+      const isVisible = document.visibilityState === "visible";
+      if (isVisible) {
         channel.track({
           user_id: session.user.id,
           online_at: new Date().toISOString(),
+          is_online: true
         });
       }
+      supabase.from("profiles").update({ 
+        updated_at: new Date().toISOString(), 
+        is_online: isVisible 
+      }).eq("id", session.user.id);
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
