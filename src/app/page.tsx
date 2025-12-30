@@ -175,7 +175,7 @@ export default function Home() {
       <PasswordGate 
         correctPassword="162008" 
         onUnlock={handleAppUnlock}
-        title="Chatify"
+        title="Nexus OS"
         subtitle="System Lock"
         description="Authorization required to initialize kernel sequence."
       />
@@ -195,7 +195,7 @@ export default function Home() {
             <Shield className="w-10 h-10 text-indigo-500 animate-pulse" />
         </div>
         <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 w-48 text-center">
-            <p className="text-[10px] font-medium uppercase tracking-[0.5em] text-indigo-500/50">Booting Chatify</p>
+            <p className="text-[10px] font-medium uppercase tracking-[0.5em] text-indigo-500/50">Booting Nexus OS</p>
         </div>
       </div>
     </div>
@@ -283,7 +283,7 @@ export default function Home() {
                     </div>
                   </div>
                   <div className="flex flex-col">
-                    <h1 className="text-xl font-black italic tracking-tighter uppercase text-white leading-none">Chatify <span className="text-indigo-400">v2</span></h1>
+                    <h1 className="text-xl font-black italic tracking-tighter uppercase text-white leading-none">Orchids <span className="text-indigo-400">v2</span></h1>
                     <div className="flex items-center gap-2 mt-1">
                         <div className="w-1 h-1 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
                         <span className="text-[8px] font-medium uppercase tracking-[0.4em] text-white/40">Secure Node</span>
@@ -298,7 +298,7 @@ export default function Home() {
                     transition={{ delay: 0.3 }}
                     className="text-3xl lg:text-5xl font-black italic tracking-tighter uppercase text-white leading-[0.9] filter drop-shadow-[0_20px_50px_rgba(0,0,0,0.8)]"
                   >
-                    CHATIFY <br />
+                    NEXUS <br />
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-indigo-600">PROTOCOL</span>
                   </motion.h2>
                   <p className="text-xs text-zinc-400 font-medium max-w-sm leading-relaxed tracking-wide border-l border-indigo-600 pl-3">
