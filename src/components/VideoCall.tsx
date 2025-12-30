@@ -46,19 +46,6 @@ export function VideoCall({
   const iceCandidateQueue = useRef<RTCIceCandidateInit[]>([]);
   const remoteDescriptionSet = useRef(false);
 
-  // Sync streams with video/audio elements
-  useEffect(() => {
-    if (stream && myVideo.current) {
-      myVideo.current.srcObject = stream;
-    }
-  }, [stream]);
-
-  useEffect(() => {
-    if (remoteStream && userVideo.current) {
-      userVideo.current.srcObject = remoteStream;
-    }
-  }, [remoteStream, isVideoOff, isMinimized]);
-
   useEffect(() => {
     const timer = setInterval(() => {
       if (!isConnecting) {
@@ -81,7 +68,19 @@ export function VideoCall({
     }
   };
 
-  const createPeerConnection = useCallback((localStream: MediaStream) => {
+    useEffect(() => {
+      if (remoteStream && userVideo.current) {
+        userVideo.current.srcObject = remoteStream;
+      }
+    }, [remoteStream]);
+
+    useEffect(() => {
+      if (stream && myVideo.current) {
+        myVideo.current.srcObject = stream;
+      }
+    }, [stream]);
+
+    const createPeerConnection = useCallback((localStream: MediaStream) => {
     const pc = new RTCPeerConnection({
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
@@ -101,6 +100,9 @@ export function VideoCall({
     pc.ontrack = (event) => {
       const [remoteStreamFromEvent] = event.streams;
       setRemoteStream(remoteStreamFromEvent);
+      if (userVideo.current) {
+        userVideo.current.srcObject = remoteStreamFromEvent;
+      }
       setIsConnecting(false);
       setConnectionStatus("Connected");
     };
