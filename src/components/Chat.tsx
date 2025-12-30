@@ -208,26 +208,6 @@ export function Chat({ session, privateKey, initialContact, isPartnerOnline, onB
       }
     }
 
-    async function toggleSave(message: any) {
-      const newSavedState = !message.is_saved;
-      const { error } = await supabase
-        .from("messages")
-        .update({ is_saved: newSavedState })
-        .eq("id", message.id);
-
-      if (error) {
-        toast.error("Failed to update save status");
-      } else {
-        setMessages(prev => prev.map(m => m.id === message.id ? { ...m, is_saved: newSavedState } : m));
-        if (showSnapshotView?.id === message.id) {
-          setShowSnapshotView({ ...showSnapshotView, is_saved: newSavedState });
-        }
-        toast.success(newSavedState ? "Intelligence secured" : "Intelligence unsaved", {
-          icon: newSavedState ? <Sparkles className="w-4 h-4 text-yellow-500" /> : <Trash2 className="w-4 h-4 text-zinc-500" />
-        });
-      }
-    }
-
     async function fetchMessages() {
       setLoading(true);
       const { data, error } = await supabase
@@ -388,34 +368,27 @@ export function Chat({ session, privateKey, initialContact, isPartnerOnline, onB
     toast.success(isSnapshot ? "Snapshot deployed" : `${type.charAt(0).toUpperCase() + type.slice(1)} transmitted`);
   };
 
-      const openSnapshot = async (message: any) => {
-        if (!message.is_saved && message.view_count >= 2) {
-          toast.error("Snapshot expired: Data purged after 2 views");
-          return;
-        }
-        
-        setShowSnapshotView(message);
-        
-        // Always increment view count
-        const newViewCount = (message.view_count || 0) + 1;
-        await supabase.from("messages")
-          .update({ 
-            view_count: newViewCount,
-            is_viewed: newViewCount >= 2 
-          })
-          .eq("id", message.id);
-        
-        setMessages(prev => prev.map(m => m.id === message.id ? { ...m, view_count: newViewCount, is_viewed: newViewCount >= 2 } : m));
-      };
-  
-      const closeSnapshot = async () => {
-        if (showSnapshotView && !showSnapshotView.is_saved && showSnapshotView.view_count >= 2) {
-          // Purge if views exhausted and not saved
-          await supabase.from("messages").delete().eq("id", showSnapshotView.id);
-          setMessages(prev => prev.filter(m => m.id !== showSnapshotView.id));
-        }
-        setShowSnapshotView(null);
-      };
+    const openSnapshot = async (message: any) => {
+      if (message.is_viewed && message.sender_id !== session.user.id) {
+        toast.error("Snapshot expired: Data purged");
+        return;
+      }
+      setShowSnapshotView(message);
+      
+      if (message.receiver_id === session.user.id) {
+        // Mark as viewed and trigger deletion after a short delay or when closed
+        await supabase.from("messages").update({ is_viewed: true }).eq("id", message.id);
+      }
+    };
+
+    const closeSnapshot = async () => {
+      if (showSnapshotView && showSnapshotView.receiver_id === session.user.id) {
+        // Purge immediately upon closing
+        await supabase.from("messages").delete().eq("id", showSnapshotView.id);
+        setMessages(prev => prev.filter(m => m.id !== showSnapshotView.id));
+      }
+      setShowSnapshotView(null);
+    };
 
   const saveToDevice = async (url: string, name: string = "nexus-media") => {
     try {
@@ -504,121 +477,89 @@ export function Chat({ session, privateKey, initialContact, isPartnerOnline, onB
             <p className="text-[10px] font-black uppercase tracking-[0.4em]">End-to-End Encrypted</p>
           </div>
         ) : (
-            messages.map((msg, i) => {
-              const isMe = msg.sender_id === session.user.id;
-              const isSaved = msg.is_saved;
-              const goldenStyle = isSaved ? "border-yellow-500/50 shadow-[0_0_20px_rgba(234,179,8,0.2)] bg-yellow-500/[0.05]" : "";
+          messages.map((msg, i) => {
+            const isMe = msg.sender_id === session.user.id;
+            return (
+              <motion.div 
+                key={msg.id}
+                initial={{ opacity: 0, x: isMe ? 20 : -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className={`flex ${isMe ? "justify-end" : "justify-start"}`}
+              >
+                <div className={`max-w-[80%] flex flex-col ${isMe ? "items-end" : "items-start"}`}>
+                  {msg.media_type === 'snapshot' ? (
+                    <button 
+                      onClick={() => openSnapshot(msg)}
+                      className={`group relative p-4 rounded-[2rem] border transition-all ${
+                        msg.is_viewed && !isMe 
+                          ? "bg-zinc-900/50 border-white/5 opacity-50 cursor-not-allowed" 
+                          : "bg-purple-600/10 border-purple-500/30 hover:bg-purple-600/20"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-purple-500/20 flex items-center justify-center">
+                          {msg.is_viewed && !isMe ? <EyeOff className="w-5 h-5 text-purple-400" /> : <Camera className="w-5 h-5 text-purple-400" />}
+                        </div>
+                        <div className="text-left">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-white">Snapshot</p>
+                          <p className="text-[8px] font-bold text-purple-400 uppercase tracking-tighter">
+                            {msg.is_viewed && !isMe ? "Already Viewed" : "One-Time Intelligence"}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  ) : msg.media_type === 'image' ? (
+                      <div className="group relative rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl">
+                        <img src={msg.media_url} alt="" className="max-w-full max-h-80 object-cover" />
+                        <div className="absolute bottom-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                          <button 
+                            onClick={() => setShowSaveToVault(msg)}
+                            className="p-3 bg-black/60 backdrop-blur-md rounded-2xl text-white hover:bg-indigo-600"
+                          >
+                            <Shield className="w-4 h-4" />
+                          </button>
+                          <button 
+                            onClick={() => saveToDevice(msg.media_url, "nexus-intel")}
+                            className="p-3 bg-black/60 backdrop-blur-md rounded-2xl text-white hover:bg-indigo-600"
+                          >
+                            <Save className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
 
-              return (
-                <motion.div 
-                  key={msg.id}
-                  initial={{ opacity: 0, x: isMe ? 20 : -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className={`flex ${isMe ? "justify-end" : "justify-start"}`}
-                >
-                  <div className={`max-w-[80%] flex flex-col ${isMe ? "items-end" : "items-start"}`}>
-                    {msg.media_type === 'snapshot' ? (
-                      <div className="relative group">
-                        <button 
-                          onClick={() => openSnapshot(msg)}
-                          className={`group relative p-4 rounded-[2rem] border transition-all ${goldenStyle} ${
-                            !isSaved && msg.view_count >= 2
-                              ? "bg-zinc-900/50 border-white/5 opacity-50 cursor-not-allowed" 
-                              : isSaved 
-                                ? "bg-yellow-500/10 border-yellow-500/40"
-                                : "bg-purple-600/10 border-purple-500/30 hover:bg-purple-600/20"
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${isSaved ? "bg-yellow-500/20" : "bg-purple-500/20"}`}>
-                              {isSaved ? <ShieldCheck className="w-5 h-5 text-yellow-500" /> : (!isSaved && msg.view_count >= 2) ? <EyeOff className="w-5 h-5 text-purple-400" /> : <Camera className="w-5 h-5 text-purple-400" />}
-                            </div>
-                            <div className="text-left">
-                              <p className={`text-[10px] font-black uppercase tracking-widest ${isSaved ? "text-yellow-500" : "text-white"}`}>{isSaved ? "Saved Snapshot" : "Snapshot"}</p>
-                              <p className={`text-[8px] font-bold uppercase tracking-tighter ${isSaved ? "text-yellow-500/60" : "text-purple-400"}`}>
-                                {isSaved ? "Permanently Secured" : (!isSaved && msg.view_count >= 2) ? "Views Exhausted" : `${2 - (msg.view_count || 0)} Views Remaining`}
-                              </p>
-                            </div>
+                    ) : msg.media_type === 'location' ? (
+                      <div className={`p-5 rounded-[2rem] border transition-all ${
+                        isMe ? "bg-emerald-600 border-emerald-500 shadow-lg shadow-emerald-600/20" : "bg-white/[0.03] border-white/5"
+                      }`}>
+                        <div className="flex items-center gap-4">
+                          <MapPin className="w-6 h-6 text-white animate-pulse" />
+                          <div>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-white">Live Satellite Link</p>
+                            <Button 
+                              variant="link" 
+                              onClick={() => window.open(msg.media_url, '_blank')}
+                              className="text-white font-bold p-0 h-auto underline text-[10px] uppercase tracking-tighter"
+                            >
+                              Open Satellite View
+                            </Button>
                           </div>
-                        </button>
+                        </div>
+                      </div>
+                    ) : (
+                        <div className={`group/msg relative p-5 rounded-[2rem] text-sm font-medium leading-relaxed ${
+                        isMe 
+                          ? "bg-indigo-600 text-white shadow-xl shadow-indigo-600/10" 
+                          : "bg-white/[0.03] border border-white/5 text-white/90"
+                      }`}>
+                        {msg.encrypted_content}
                         <button 
-                          onClick={() => toggleSave(msg)}
-                          className={`absolute -top-2 -right-2 p-1.5 rounded-full border bg-black/80 backdrop-blur-md transition-all opacity-0 group-hover:opacity-100 ${isSaved ? "text-yellow-500 border-yellow-500/50 shadow-lg shadow-yellow-500/20" : "text-white/20 border-white/10 hover:text-yellow-500"}`}
+                          onClick={() => deleteMessage(msg.id)}
+                          className={`absolute ${isMe ? '-left-10' : '-right-10'} top-1/2 -translate-y-1/2 p-2 text-white/10 hover:text-red-500 opacity-0 group-hover/msg:opacity-100 transition-all`}
                         >
-                          <Sparkles className="w-3 h-3" />
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
-                    ) : msg.media_type === 'image' ? (
-                        <div className={`group relative rounded-[2rem] overflow-hidden border shadow-2xl transition-all ${goldenStyle || "border-white/10"}`}>
-                          <img src={msg.media_url} alt="" className="max-w-full max-h-80 object-cover" />
-                          <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                             <button 
-                              onClick={() => toggleSave(msg)}
-                              className={`p-3 backdrop-blur-md rounded-2xl transition-all ${isSaved ? "bg-yellow-500 text-black" : "bg-black/60 text-white hover:bg-yellow-500 hover:text-black"}`}
-                            >
-                              <Sparkles className="w-4 h-4" />
-                            </button>
-                          </div>
-                          <div className="absolute bottom-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                            <button 
-                              onClick={() => setShowSaveToVault(msg)}
-                              className="p-3 bg-black/60 backdrop-blur-md rounded-2xl text-white hover:bg-indigo-600"
-                            >
-                              <Shield className="w-4 h-4" />
-                            </button>
-                            <button 
-                              onClick={() => saveToDevice(msg.media_url, "nexus-intel")}
-                              className="p-3 bg-black/60 backdrop-blur-md rounded-2xl text-white hover:bg-indigo-600"
-                            >
-                              <Save className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-  
-                      ) : msg.media_type === 'location' ? (
-                        <div className={`p-5 rounded-[2rem] border transition-all ${goldenStyle} ${
-                          isMe && !isSaved ? "bg-emerald-600 border-emerald-500 shadow-lg shadow-emerald-600/20" : (!isMe && !isSaved ? "bg-white/[0.03] border-white/5" : "")
-                        }`}>
-                          <div className="flex items-center gap-4">
-                            <MapPin className={`w-6 h-6 animate-pulse ${isSaved ? "text-yellow-500" : "text-white"}`} />
-                            <div>
-                              <p className={`text-[10px] font-black uppercase tracking-widest ${isSaved ? "text-yellow-500" : "text-white"}`}>Live Satellite Link</p>
-                              <Button 
-                                variant="link" 
-                                onClick={() => window.open(msg.media_url, '_blank')}
-                                className={`${isSaved ? "text-yellow-500/60" : "text-white"} font-bold p-0 h-auto underline text-[10px] uppercase tracking-tighter`}
-                              >
-                                Open Satellite View
-                              </Button>
-                            </div>
-                            <button onClick={() => toggleSave(msg)} className={`p-2 rounded-xl transition-all ${isSaved ? "text-yellow-500" : "text-white/10 hover:text-yellow-500"}`}>
-                              <Sparkles className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                          <div className={`group/msg relative p-5 rounded-[2rem] text-sm font-medium leading-relaxed transition-all ${goldenStyle} ${
-                          isMe && !isSaved
-                            ? "bg-indigo-600 text-white shadow-xl shadow-indigo-600/10" 
-                            : !isMe && !isSaved ? "bg-white/[0.03] border border-white/5 text-white/90" : "text-yellow-500"
-                        }`}>
-                          {msg.encrypted_content}
-                          <div className={`absolute ${isMe ? '-left-12' : '-right-12'} top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover/msg:opacity-100 transition-all`}>
-                            <button 
-                              onClick={() => toggleSave(msg)}
-                              className={`p-2 rounded-full transition-all ${isSaved ? "text-yellow-500" : "text-white/10 hover:text-yellow-500"}`}
-                            >
-                              <Sparkles className="w-4 h-4" />
-                            </button>
-                            <button 
-                              onClick={() => deleteMessage(msg.id)}
-                              className="p-2 text-white/10 hover:text-red-500 transition-all"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      )}
+                    )}
                       <div className="flex items-center gap-2 mt-2 px-2">
                         <span className="text-[7px] font-black uppercase tracking-widest text-white/10">
                           {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -801,88 +742,69 @@ export function Chat({ session, privateKey, initialContact, isPartnerOnline, onB
 
         {/* Snapshot Modal */}
 
-        <AnimatePresence>
-          {showSnapshotView && (
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[100] bg-black backdrop-blur-3xl flex items-center justify-center p-6"
-            >
-              <div className="absolute inset-0 bg-gradient-to-t from-purple-950/20 to-black pointer-events-none" />
-              
-              {/* Close Button (X) */}
-              <button 
-                onClick={closeSnapshot}
-                className="absolute top-8 right-8 p-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full text-white/60 hover:text-white transition-all z-[110]"
-              >
-                <X className="w-6 h-6" />
-              </button>
-
-              <div className={`relative w-full max-w-2xl aspect-[3/4] md:aspect-[4/3] bg-black rounded-[3rem] overflow-hidden border border-white/10 shadow-2xl group flex flex-col transition-all duration-500 ${!isFocused ? 'blur-3xl scale-95 opacity-50' : 'blur-0 scale-100 opacity-100'}`}>
-                <div className="flex-1 overflow-hidden relative">
-                  <img 
-                    src={showSnapshotView.media_url} 
-                    alt="" 
-                    className="w-full h-full object-contain pointer-events-none select-none" 
-                    onDragStart={(e) => e.preventDefault()}
-                  />
-                  
-                  {/* Security watermarks */}
-                  <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-[0.03] flex flex-wrap gap-20 p-20 rotate-12">
-                     {Array.from({ length: 40 }).map((_, i) => (
-                       <span key={i} className="text-2xl font-black italic whitespace-nowrap">ANTI_SCREENSHOT_PROTOCOL_{session.user.id.substring(0, 8)}</span>
-                     ))}
-                  </div>
-
-                  {!isFocused && (
-                    <div className="absolute inset-0 flex items-center justify-center z-50">
-                      <div className="bg-black/80 backdrop-blur-md p-8 rounded-[2rem] border border-white/10 text-center">
-                        <Lock className="w-12 h-12 text-red-500 mx-auto mb-4 animate-pulse" />
-                        <p className="text-xl font-black italic text-white uppercase tracking-tighter">Privacy Lock Active</p>
-                        <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest mt-2">Return focus to view intelligence</p>
-                      </div>
-                    </div>
-                  )}
+      <AnimatePresence>
+        {showSnapshotView && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black backdrop-blur-3xl flex items-center justify-center p-6"
+          >
+            <div className="absolute inset-0 bg-gradient-to-t from-purple-950/20 to-black pointer-events-none" />
+            <div className={`relative w-full max-w-2xl aspect-[3/4] md:aspect-[4/3] bg-black rounded-[3rem] overflow-hidden border border-white/10 shadow-2xl group flex flex-col transition-all duration-500 ${!isFocused ? 'blur-3xl scale-95 opacity-50' : 'blur-0 scale-100 opacity-100'}`}>
+              <div className="flex-1 overflow-hidden relative">
+                <img 
+                  src={showSnapshotView.media_url} 
+                  alt="" 
+                  className="w-full h-full object-contain pointer-events-none select-none" 
+                  onDragStart={(e) => e.preventDefault()}
+                />
+                
+                {/* Security watermarks */}
+                <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-[0.03] flex flex-wrap gap-20 p-20 rotate-12">
+                   {Array.from({ length: 40 }).map((_, i) => (
+                     <span key={i} className="text-2xl font-black italic whitespace-nowrap">ANTI_SCREENSHOT_PROTOCOL_{session.user.id.substring(0, 8)}</span>
+                   ))}
                 </div>
 
-                <div className={`p-10 border-t border-white/5 flex items-center justify-between transition-colors ${showSnapshotView.is_saved ? "bg-yellow-500/10" : "bg-black/80 backdrop-blur-xl"}`}>
-                  <div>
-                    <h4 className={`text-xl font-black italic uppercase tracking-tighter ${showSnapshotView.is_saved ? "text-yellow-500" : "text-white"}`}>
-                      {showSnapshotView.is_saved ? "Secured Intelligence" : "Temporal Snapshot"}
-                    </h4>
-                    <p className={`text-[10px] font-bold uppercase tracking-widest mt-1 flex items-center gap-2 ${showSnapshotView.is_saved ? "text-yellow-500/60" : "text-purple-400"}`}>
-                      {showSnapshotView.is_saved ? (
-                        <><ShieldCheck className="w-3 h-3" /> This intelligence is permanently saved</>
-                      ) : (
-                        <><AlertTriangle className="w-3 h-3" /> Views remaining: {2 - (showSnapshotView.view_count || 0)}</>
-                      )}
-                    </p>
+                {!isFocused && (
+                  <div className="absolute inset-0 flex items-center justify-center z-50">
+                    <div className="bg-black/80 backdrop-blur-md p-8 rounded-[2rem] border border-white/10 text-center">
+                      <Lock className="w-12 h-12 text-red-500 mx-auto mb-4 animate-pulse" />
+                      <p className="text-xl font-black italic text-white uppercase tracking-tighter">Privacy Lock Active</p>
+                      <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest mt-2">Return focus to view intelligence</p>
+                    </div>
                   </div>
-                  <div className="flex gap-4">
-                    <Button 
-                      onClick={() => toggleSave(showSnapshotView)}
-                      variant="ghost" 
-                      className={`h-16 px-8 rounded-2xl font-black tracking-widest text-[10px] uppercase transition-all ${
-                        showSnapshotView.is_saved 
-                          ? "bg-yellow-500 text-black hover:bg-yellow-400" 
-                          : "bg-white/5 text-white/60 hover:bg-white/10"
-                      }`}
-                    >
-                      <Sparkles className="w-4 h-4 mr-3" /> {showSnapshotView.is_saved ? "Intelligence Secured" : "Save Intel"}
-                    </Button>
-                    <Button 
-                      onClick={closeSnapshot}
-                      className="h-16 px-10 bg-indigo-600 hover:bg-indigo-500 rounded-2xl font-black tracking-widest text-[10px] uppercase"
-                    >
-                      Close Protocol
-                    </Button>
-                  </div>
+                )}
+              </div>
+
+              <div className="p-10 bg-black/80 backdrop-blur-xl border-t border-white/5 flex items-center justify-between">
+                <div>
+                  <h4 className="text-xl font-black italic text-white uppercase tracking-tighter">Temporal Snapshot</h4>
+                  <p className="text-[10px] text-purple-400 font-bold uppercase tracking-widest mt-1 flex items-center gap-2">
+                    <AlertTriangle className="w-3 h-3" /> This intelligence will self-destruct upon closing
+                  </p>
+                </div>
+                <div className="flex gap-4">
+                  <Button 
+                    onClick={() => saveToDevice(showSnapshotView.media_url, "snapshot-intel")}
+                    variant="ghost" 
+                    className="h-16 px-8 bg-white/5 text-white/60 hover:bg-white/10 rounded-2xl font-black tracking-widest text-[10px] uppercase"
+                  >
+                    <Save className="w-4 h-4 mr-3" /> Save Intel
+                  </Button>
+                  <Button 
+                    onClick={() => setShowSnapshotView(null)}
+                    className="h-16 px-10 bg-indigo-600 hover:bg-indigo-500 rounded-2xl font-black tracking-widest text-[10px] uppercase"
+                  >
+                    Close Protocol
+                  </Button>
                 </div>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
