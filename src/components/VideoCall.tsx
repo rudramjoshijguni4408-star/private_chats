@@ -86,11 +86,26 @@ export function VideoCall({
     });
 
     pc.ontrack = (event) => {
+      console.log("Remote track received:", event.track.kind);
       const [remoteStreamFromEvent] = event.streams;
       setRemoteStream(remoteStreamFromEvent);
-      if (userVideo.current) {
+      
+      // For video calls, set the video element
+      if (userVideo.current && initialCallType === "video") {
         userVideo.current.srcObject = remoteStreamFromEvent;
+        userVideo.current.play().catch(e => console.log("Video play error:", e));
       }
+      
+      // For voice calls or any call with audio, handle audio separately
+      if (event.track.kind === 'audio') {
+        // Create a dedicated audio element for remote audio
+        const audioEl = document.getElementById('remote-audio') as HTMLAudioElement;
+        if (audioEl) {
+          audioEl.srcObject = remoteStreamFromEvent;
+          audioEl.play().catch(e => console.log("Audio play error:", e));
+        }
+      }
+      
       setIsConnecting(false);
       setConnectionStatus("Connected");
     };
@@ -409,16 +424,28 @@ export function VideoCall({
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 contrast-150" />
       </div>
 
-      {initialCallType === "voice" && remoteStream && (
-        <audio ref={userVideo as any} autoPlay playsInline />
-      )}
+      {/* Dedicated audio element for remote audio - always present */}
+      <audio id="remote-audio" autoPlay playsInline className="hidden" />
 
       <motion.div 
         layoutId="call-window"
         className="w-full max-w-6xl aspect-video md:aspect-video bg-[#0a0a0a] rounded-[2rem] sm:rounded-[4rem] border border-white/[0.08] overflow-hidden shadow-[0_0_100px_rgba(0,0,0,1)] relative group"
       >
         <div className={`absolute inset-0 transition-all duration-1000 ${isBlurred ? "blur-3xl grayscale scale-110" : "blur-0 scale-100"}`}>
-          {initialCallType === "voice" || !remoteStream || (initialCallType === "video" && isVideoOff) ? (
+          {/* Show remote video for video calls when stream is available */}
+          {initialCallType === "video" && remoteStream ? (
+            <video 
+              playsInline 
+              ref={userVideo} 
+              autoPlay 
+              className="w-full h-full object-cover"
+              onLoadedMetadata={(e) => {
+                const video = e.target as HTMLVideoElement;
+                video.play().catch(err => console.log("Video autoplay error:", err));
+              }}
+            />
+          ) : (
+            /* Voice call or waiting for video connection */
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-zinc-950/60 via-zinc-950/80 to-zinc-950 backdrop-blur-3xl p-6">
               <div className="relative">
                 <div className={`absolute inset-0 ${initialCallType === "voice" ? 'bg-emerald-500/20' : 'bg-indigo-500/20'} blur-[60px] sm:blur-[100px] rounded-full animate-pulse`} />
@@ -467,14 +494,12 @@ export function VideoCall({
                    <p className={`text-[8px] sm:text-[10px] font-medium uppercase tracking-wider ${initialCallType === "voice" ? 'text-emerald-400' : 'text-indigo-400'}`}>{connectionStatus}</p>
                 </div>
                 {!isConnecting && initialCallType === "voice" && (
-                  <p className="text-xl sm:text-3xl font-black italic text-white/80 font-mono">{formatDuration(callDuration)}</p>
-                )}
+                    <p className="text-xl sm:text-3xl font-black italic text-white/80 font-mono">{formatDuration(callDuration)}</p>
+                  )}
+                </div>
               </div>
-            </div>
-          ) : (
-            <video playsInline ref={userVideo} autoPlay className="w-full h-full object-cover" />
-          )}
-        </div>
+            )}
+          </div>
 
         <AnimatePresence>
           {initialCallType === "video" && !isVideoOff && stream && (
