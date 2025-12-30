@@ -108,8 +108,7 @@ export function UserDashboardView({ session, privateKey }: UserDashboardViewProp
             updateOnlineStatus(true);
           }
           fetchUnviewedSnapshots();
-          supabase.rpc('purge_viewed_content');
-        }, 10000); // Reduced to 10s for more "immediate" status
+        }, 30000); // Increased to 30s for better performance
 
         if ("Notification" in window && Notification.permission === "default") {
           Notification.requestPermission();
@@ -358,7 +357,7 @@ export function UserDashboardView({ session, privateKey }: UserDashboardViewProp
         )}
       </AnimatePresence>
 
-      <motion.aside initial={{ x: -100, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className={`${sidebarOpen ? 'w-80' : 'w-24'} border-r border-white/5 bg-[#050505]/80 backdrop-blur-3xl flex flex-col transition-all duration-500 hidden lg:flex relative z-40 h-full overflow-hidden`}>
+        <motion.aside initial={{ x: -100, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className={`${sidebarOpen ? 'w-80' : 'w-24'} border-r border-white/5 bg-[#050505]/80 backdrop-blur-xl flex flex-col transition-all duration-500 hidden lg:flex relative z-40 h-full overflow-hidden`}>
         <div className={`p-6 border-b border-white/5 shrink-0 flex items-center ${sidebarOpen ? 'justify-between' : 'justify-center'}`}>
           <div className="flex items-center gap-5">
             <AvatarDisplay profile={myProfile} className="h-12 w-12" />
@@ -402,7 +401,7 @@ export function UserDashboardView({ session, privateKey }: UserDashboardViewProp
         </motion.aside>
 
         <div className="flex-1 flex flex-col min-w-0 bg-[#030303] relative overflow-hidden h-full">
-          <header className="lg:hidden h-20 border-b border-white/5 bg-[#050505]/80 backdrop-blur-3xl flex items-center justify-between px-6 z-30 shrink-0">
+            <header className="lg:hidden h-20 border-b border-white/5 bg-[#050505]/80 backdrop-blur-xl flex items-center justify-between px-6 z-30 shrink-0">
             <div className="flex items-center gap-4">
               <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(true)} className="text-white/20"><Menu className="w-6 h-6" /></Button>
               <h1 className="text-lg font-black italic tracking-tighter uppercase font-accent">Orchids <span className="text-indigo-500">Core</span></h1>
@@ -576,7 +575,7 @@ export function UserDashboardView({ session, privateKey }: UserDashboardViewProp
             )}
           </AnimatePresence>
 
-            <nav className={`lg:hidden fixed bottom-0 left-0 right-0 border-t border-white/5 bg-[#050505]/95 backdrop-blur-3xl px-4 py-4 flex justify-around items-center z-50 rounded-t-[2.5rem] pb-safe transition-all ${ (activeView === 'chat' && selectedContact) ? 'translate-y-full' : ''}`}>
+              <nav className={`lg:hidden fixed bottom-0 left-0 right-0 border-t border-white/5 bg-[#050505]/95 backdrop-blur-xl px-4 py-4 flex justify-around items-center z-50 rounded-t-[2.5rem] pb-safe transition-all ${ (activeView === 'chat' && selectedContact) ? 'translate-y-full' : ''}`}>
               {navItems.map(item => {
                 const isActive = activeView === item.id;
                 return (

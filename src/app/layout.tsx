@@ -20,6 +20,9 @@ const spaceGrotesk = Space_Grotesk({
 export const metadata: Metadata = {
   title: "Chatify",
   description: "Secure Personal Communication",
+  icons: {
+    icon: "/favicon.png",
+  },
 };
 
 export default function RootLayout({

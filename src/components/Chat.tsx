@@ -39,82 +39,7 @@ export function Chat({ session, privateKey, initialContact, isPartnerOnline, onB
     const [showSaveToVault, setShowSaveToVault] = useState<any>(null);
     const [vaultPassword, setVaultPassword] = useState("");
     const [lastReadTimestamp, setLastReadTimestamp] = useState<string | null>(null);
-    const [showCameraModal, setShowCameraModal] = useState(false);
-    const [cameraMode, setCameraMode] = useState<"photo" | "snapshot">("photo");
-    const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
-    const videoRef = useRef<HTMLVideoElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-      if (showCameraModal) {
-        startCamera();
-      } else {
-        stopCamera();
-      }
-    }, [showCameraModal]);
-
-    const startCamera = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: "user" },
-          audio: false 
-        });
-        setCameraStream(stream);
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
-      } catch (err) {
-        toast.error("Failed to access camera");
-        setShowCameraModal(false);
-      }
-    };
-
-    const stopCamera = () => {
-      if (cameraStream) {
-        cameraStream.getTracks().forEach(track => track.stop());
-        setCameraStream(null);
-      }
-    };
-
-    const captureImage = async () => {
-      if (!videoRef.current) return;
-
-      const canvas = document.createElement("canvas");
-      canvas.width = videoRef.current.videoWidth;
-      canvas.height = videoRef.current.videoHeight;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-
-      ctx.drawImage(videoRef.current, 0, 0);
-      
-      canvas.toBlob(async (blob) => {
-        if (!blob) return;
-        
-        const file = new File([blob], `capture-${Date.now()}.jpg`, { type: "image/jpeg" });
-        const filePath = `chat/${session.user.id}/${file.name}`;
-
-        toast.loading(cameraMode === "snapshot" ? "Securing snapshot..." : "Transmitting photo...");
-
-        const { error: uploadError } = await supabase.storage
-          .from("chat-media")
-          .upload(filePath, file);
-
-        if (uploadError) {
-          toast.dismiss();
-          toast.error("Upload failed");
-          return;
-        }
-
-        const { data: { publicUrl } } = supabase.storage
-          .from("chat-media")
-          .getPublicUrl(filePath);
-
-        toast.dismiss();
-        await sendMessage(cameraMode === "snapshot" ? "snapshot" : "image", publicUrl);
-        toast.success(cameraMode === "snapshot" ? "Snapshot deployed" : "Photo transmitted");
-        setShowCameraModal(false);
-      }, "image/jpeg", 0.8);
-    };
 
     useEffect(() => {
       const handleBlur = () => setIsFocused(false);
@@ -502,8 +427,8 @@ export function Chat({ session, privateKey, initialContact, isPartnerOnline, onB
         }
       `}</style>
 
-          {/* Header */}
-          <header className="h-20 border-b border-white/5 bg-black/40 backdrop-blur-3xl flex items-center justify-between px-6 z-20 shrink-0">
+            {/* Header */}
+            <header className="h-20 border-b border-white/5 bg-black/40 backdrop-blur-xl flex items-center justify-between px-6 z-20 shrink-0">
               <div className="flex items-center gap-4">
                   <Button 
                     variant="ghost" 
@@ -552,14 +477,12 @@ export function Chat({ session, privateKey, initialContact, isPartnerOnline, onB
             <p className="text-[10px] font-black uppercase tracking-[0.4em]">End-to-End Encrypted</p>
           </div>
         ) : (
-            messages.map((msg, i) => {
-              const isMe = msg.sender_id === session.user.id;
-              const uniqueKey = msg.id || `msg-${i}-${msg.created_at || Date.now()}`;
-              return (
-                <motion.div 
-                  key={uniqueKey}
-                  initial={{ opacity: 0, x: isMe ? 20 : -20 }}
-
+          messages.map((msg, i) => {
+            const isMe = msg.sender_id === session.user.id;
+            return (
+              <motion.div 
+                key={msg.id}
+                initial={{ opacity: 0, x: isMe ? 20 : -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 className={`flex ${isMe ? "justify-end" : "justify-start"}`}
               >
@@ -714,7 +637,7 @@ export function Chat({ session, privateKey, initialContact, isPartnerOnline, onB
         </div>
 
         {/* Input Area */}
-      <footer className="p-6 bg-black/40 backdrop-blur-3xl border-t border-white/5 relative z-30 shrink-0">
+      <footer className="p-6 bg-black/40 backdrop-blur-xl border-t border-white/5 relative z-30 shrink-0">
         <div className="flex items-center gap-3 relative">
           <Button 
             variant="ghost" 
@@ -749,29 +672,18 @@ export function Chat({ session, privateKey, initialContact, isPartnerOnline, onB
                 exit={{ opacity: 0, y: 10, scale: 0.9 }}
                 className="absolute bottom-20 left-0 w-64 bg-[#0a0a0a] border border-white/10 rounded-[2.5rem] p-4 shadow-2xl z-50 overflow-hidden"
               >
-                  <div className="grid grid-cols-2 gap-2">
-                      <button 
-                        onClick={() => { setShowCameraModal(true); setCameraMode("photo"); }}
-                        className="flex flex-col items-center justify-center p-4 bg-white/[0.02] border border-white/5 rounded-2xl hover:bg-indigo-600/10 hover:border-indigo-500/30 transition-all cursor-pointer group"
-                      >
-                        <Camera className="w-6 h-6 text-indigo-400 mb-2 group-hover:scale-110 transition-transform" />
-                        <span className="text-[8px] font-black uppercase tracking-widest text-white/40">Camera</span>
-                      </button>
-                      
-                      <button 
-                        onClick={() => { setShowCameraModal(true); setCameraMode("snapshot"); }}
-                        className="flex flex-col items-center justify-center p-4 bg-purple-600/5 border border-purple-500/20 rounded-2xl hover:bg-purple-600/20 hover:border-purple-500/40 transition-all cursor-pointer group"
-                      >
-                        <Zap className="w-6 h-6 text-purple-400 mb-2 group-hover:scale-110 transition-transform" />
-                        <span className="text-[8px] font-black uppercase tracking-widest text-white/40">Snapshot</span>
-                      </button>
-
-                      <label className="flex flex-col items-center justify-center p-4 bg-white/[0.02] border border-white/5 rounded-2xl hover:bg-indigo-600/10 hover:border-indigo-500/30 transition-all cursor-pointer group">
-                        <ImageIcon className="w-6 h-6 text-emerald-400 mb-2 group-hover:scale-110 transition-transform" />
-                        <span className="text-[8px] font-black uppercase tracking-widest text-white/40">Gallery</span>
-                        <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, false, "image")} />
-                      </label>
-
+                <div className="grid grid-cols-2 gap-2">
+                    <label className="flex flex-col items-center justify-center p-4 bg-white/[0.02] border border-white/5 rounded-2xl hover:bg-indigo-600/10 hover:border-indigo-500/30 transition-all cursor-pointer group">
+                      <ImageIcon className="w-6 h-6 text-indigo-400 mb-2 group-hover:scale-110 transition-transform" />
+                      <span className="text-[8px] font-black uppercase tracking-widest text-white/40">Photo</span>
+                      <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, false, "image")} />
+                    </label>
+                    
+                    <label className="flex flex-col items-center justify-center p-4 bg-purple-600/5 border border-purple-500/20 rounded-2xl hover:bg-purple-600/20 hover:border-purple-500/40 transition-all cursor-pointer group">
+                      <Camera className="w-6 h-6 text-purple-400 mb-2 group-hover:scale-110 transition-transform" />
+                      <span className="text-[8px] font-black uppercase tracking-widest text-white/40">Snapshot</span>
+                      <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, true, "image")} />
+                    </label>
 
                     <label className="flex flex-col items-center justify-center p-4 bg-white/[0.02] border border-white/5 rounded-2xl hover:bg-indigo-600/10 hover:border-indigo-500/30 transition-all cursor-pointer group">
                       <Video className="w-6 h-6 text-blue-400 mb-2 group-hover:scale-110 transition-transform" />
@@ -850,10 +762,9 @@ export function Chat({ session, privateKey, initialContact, isPartnerOnline, onB
                 
                 {/* Security watermarks */}
                 <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-[0.03] flex flex-wrap gap-20 p-20 rotate-12">
-                     {Array.from({ length: 40 }).map((_, i) => (
-                       <span key={`watermark-${i}`} className="text-2xl font-black italic whitespace-nowrap">ANTI_SCREENSHOT_PROTOCOL_{session.user.id.substring(0, 8)}</span>
-                     ))}
-
+                   {Array.from({ length: 40 }).map((_, i) => (
+                     <span key={i} className="text-2xl font-black italic whitespace-nowrap">ANTI_SCREENSHOT_PROTOCOL_{session.user.id.substring(0, 8)}</span>
+                   ))}
                 </div>
 
                 {!isFocused && (
@@ -893,59 +804,7 @@ export function Chat({ session, privateKey, initialContact, isPartnerOnline, onB
             </div>
           </motion.div>
         )}
-          </AnimatePresence>
-  
-          {/* Camera Modal */}
-          <AnimatePresence>
-            {showCameraModal && (
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[200] bg-black backdrop-blur-3xl flex flex-col items-center justify-center p-6"
-              >
-                <div className="relative w-full max-w-2xl aspect-[3/4] md:aspect-[4/3] bg-zinc-950 rounded-[3rem] overflow-hidden border border-white/10 shadow-2xl flex flex-col">
-                  <div className="absolute top-6 left-6 right-6 flex items-center justify-between z-10">
-                    <div className="flex items-center gap-3 bg-black/60 backdrop-blur-xl px-4 py-2 rounded-2xl border border-white/10">
-                      <div className={`w-2 h-2 rounded-full animate-pulse ${cameraMode === 'snapshot' ? 'bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]' : 'bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]'}`} />
-                      <span className="text-[10px] font-black uppercase tracking-widest text-white">
-                        {cameraMode === 'snapshot' ? 'Temporal Snapshot Mode' : 'Standard Photo Mode'}
-                      </span>
-                    </div>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={() => setShowCameraModal(false)}
-                      className="h-12 w-12 rounded-2xl bg-black/60 backdrop-blur-xl border border-white/10 text-white/40 hover:text-white"
-                    >
-                      <X className="w-6 h-6" />
-                    </Button>
-                  </div>
-
-                  <div className="flex-1 relative bg-black">
-                    <video 
-                      ref={videoRef} 
-                      autoPlay 
-                      playsInline 
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 pointer-events-none border-[20px] border-black/20" />
-                  </div>
-
-                  <div className="p-10 bg-black/80 backdrop-blur-xl border-t border-white/5 flex flex-col items-center gap-6">
-                    <button 
-                      onClick={captureImage}
-                      className={`h-24 w-24 rounded-full border-[6px] p-1 transition-all active:scale-90 ${cameraMode === 'snapshot' ? 'border-purple-500/30' : 'border-indigo-500/30'}`}
-                    >
-                      <div className={`w-full h-full rounded-full transition-colors ${cameraMode === 'snapshot' ? 'bg-purple-600 hover:bg-purple-500' : 'bg-indigo-600 hover:bg-indigo-500'}`} />
-                    </button>
-                    <p className="text-[8px] font-black uppercase tracking-[0.4em] text-white/20">Tap to Capture Intelligence</p>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      );
-    }
-
+      </AnimatePresence>
+    </div>
+  );
+}
