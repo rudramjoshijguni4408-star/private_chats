@@ -481,7 +481,7 @@ export function Chat({ session, privateKey, initialContact, isPartnerOnline, onB
             const isMe = msg.sender_id === session.user.id;
             return (
               <motion.div 
-                key={msg.id}
+                key={msg.id || `msg-${i}`}
                 initial={{ opacity: 0, x: isMe ? 20 : -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 className={`flex ${isMe ? "justify-end" : "justify-start"}`}
@@ -590,6 +590,7 @@ export function Chat({ session, privateKey, initialContact, isPartnerOnline, onB
           <AnimatePresence>
             {partnerPresence.isInChat && (
               <motion.div 
+                key="in-chat"
                 initial={{ opacity: 0, scale: 0.5 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.5 }}
@@ -611,6 +612,7 @@ export function Chat({ session, privateKey, initialContact, isPartnerOnline, onB
             
             {partnerPresence.isTyping && (
               <motion.div 
+                key="typing"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
