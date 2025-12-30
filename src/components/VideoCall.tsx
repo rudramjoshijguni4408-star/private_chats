@@ -46,22 +46,6 @@ export function VideoCall({
   const iceCandidateQueue = useRef<RTCIceCandidateInit[]>([]);
   const remoteDescriptionSet = useRef(false);
 
-  // Sync remote stream to video/audio element
-  useEffect(() => {
-    if (remoteStream && userVideo.current) {
-      console.log("Syncing remote stream to element");
-      userVideo.current.srcObject = remoteStream;
-      userVideo.current.play().catch(e => console.error("Auto-play failed:", e));
-    }
-  }, [remoteStream, userVideo.current]);
-
-  // Sync local stream to my video element
-  useEffect(() => {
-    if (stream && myVideo.current) {
-      myVideo.current.srcObject = stream;
-    }
-  }, [stream, myVideo.current]);
-
   useEffect(() => {
     const timer = setInterval(() => {
       if (!isConnecting) {
@@ -72,7 +56,6 @@ export function VideoCall({
   }, [isConnecting]);
 
   const processQueuedCandidates = async (pc: RTCPeerConnection) => {
-    console.log("Processing queued candidates:", iceCandidateQueue.current.length);
     while (iceCandidateQueue.current.length > 0) {
       const candidate = iceCandidateQueue.current.shift();
       if (candidate) {
@@ -86,7 +69,6 @@ export function VideoCall({
   };
 
   const createPeerConnection = useCallback((localStream: MediaStream) => {
-    console.log("Creating PeerConnection");
     const pc = new RTCPeerConnection({
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
@@ -104,16 +86,17 @@ export function VideoCall({
     });
 
     pc.ontrack = (event) => {
-      console.log("Received remote track");
       const [remoteStreamFromEvent] = event.streams;
       setRemoteStream(remoteStreamFromEvent);
+      if (userVideo.current) {
+        userVideo.current.srcObject = remoteStreamFromEvent;
+      }
       setIsConnecting(false);
       setConnectionStatus("Connected");
     };
 
     pc.onicecandidate = async (event) => {
       if (event.candidate) {
-        console.log("New local ICE candidate");
         try {
           await supabase.from("calls").insert({
             caller_id: userId,
@@ -130,7 +113,6 @@ export function VideoCall({
 
     pc.oniceconnectionstatechange = () => {
       const state = pc.iceConnectionState;
-      console.log("ICE connection state:", state);
       if (state === 'connected' || state === 'completed') {
         setIsConnecting(false);
         setConnectionStatus("Connected");
@@ -147,7 +129,6 @@ export function VideoCall({
     };
 
     pc.onconnectionstatechange = () => {
-      console.log("Connection state:", pc.connectionState);
       if (pc.connectionState === 'connected') {
         setIsConnecting(false);
         setConnectionStatus("Connected");
@@ -163,12 +144,11 @@ export function VideoCall({
     const startCall = async () => {
       try {
         setConnectionStatus("Requesting media access...");
-        console.log("Requesting media access with type:", initialCallType);
         
         const constraints = {
           video: initialCallType === "video" ? {
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
+            width: { ideal: 1280, max: 1920 },
+            height: { ideal: 720, max: 1080 },
             facingMode: "user",
             frameRate: { ideal: 30 }
           } : false,
@@ -179,25 +159,17 @@ export function VideoCall({
           }
         };
 
-        let localStream;
-        try {
-          localStream = await navigator.mediaDevices.getUserMedia(constraints);
-        } catch (e) {
-          console.warn("High-res media failed, trying fallback", e);
-          // Fallback to basic constraints if high-res fails
-          localStream = await navigator.mediaDevices.getUserMedia({
-            video: initialCallType === "video",
-            audio: true
-          });
-        }
+        const localStream = await navigator.mediaDevices.getUserMedia(constraints);
         
         if (!isMounted) {
           localStream.getTracks().forEach(track => track.stop());
           return;
         }
 
-        console.log("Local stream acquired");
         setStream(localStream);
+        if (myVideo.current) {
+          myVideo.current.srcObject = localStream;
+        }
 
         setConnectionStatus("Setting up connection...");
         const pc = createPeerConnection(localStream);
@@ -205,7 +177,6 @@ export function VideoCall({
 
         if (isInitiator) {
           setConnectionStatus("Creating offer...");
-          console.log("Creating offer");
           const offer = await pc.createOffer({
             offerToReceiveAudio: true,
             offerToReceiveVideo: initialCallType === "video"
@@ -223,7 +194,6 @@ export function VideoCall({
           setConnectionStatus("Waiting for answer...");
         } else if (incomingSignal?.sdp) {
           setConnectionStatus("Processing incoming call...");
-          console.log("Processing incoming SDP");
           await pc.setRemoteDescription(new RTCSessionDescription(incomingSignal.sdp));
           remoteDescriptionSet.current = true;
           await processQueuedCandidates(pc);
@@ -243,19 +213,17 @@ export function VideoCall({
         }
 
         const channelId = [userId, contact.id].sort().join('-');
-        console.log("Subscribing to signals on channel:", channelId);
         const channel = supabase
           .channel(`call-${channelId}`)
           .on("postgres_changes", { 
-            event: "*", 
+            event: "INSERT", 
             schema: "public", 
             table: "calls", 
             filter: `receiver_id=eq.${userId}` 
           }, async (payload) => {
-            const data = payload.new as any;
-            if (!data || !peerConnection.current) return;
+            const data = payload.new;
             
-            console.log("Received signal:", data.type);
+            if (!peerConnection.current) return;
 
             try {
               const signalData = JSON.parse(data.signal_data);
@@ -263,7 +231,6 @@ export function VideoCall({
               if (data.type === "answer" && isInitiator && signalData.sdp && !hasAnswered.current) {
                 hasAnswered.current = true;
                 setConnectionStatus("Received answer, connecting...");
-                console.log("Setting remote description (answer)");
                 await peerConnection.current.setRemoteDescription(
                   new RTCSessionDescription(signalData.sdp)
                 );
@@ -272,7 +239,6 @@ export function VideoCall({
               } else if (data.type === "candidate" && signalData.candidate) {
                 if (remoteDescriptionSet.current && peerConnection.current.remoteDescription) {
                   try {
-                    console.log("Adding remote ICE candidate");
                     await peerConnection.current.addIceCandidate(
                       new RTCIceCandidate(signalData.candidate)
                     );
@@ -280,11 +246,9 @@ export function VideoCall({
                     console.error("Failed to add ICE candidate:", err);
                   }
                 } else {
-                  console.log("Queueing remote ICE candidate");
                   iceCandidateQueue.current.push(signalData.candidate);
                 }
               } else if (data.type === "end") {
-                console.log("Call ended by remote");
                 toast.info("Call ended by remote user");
                 endCall();
               }
@@ -292,9 +256,7 @@ export function VideoCall({
               console.error("Signal processing error:", err);
             }
           })
-          .subscribe((status) => {
-            console.log("Signal channel status:", status);
-          });
+          .subscribe();
 
         channelRef.current = channel;
 
@@ -332,7 +294,6 @@ export function VideoCall({
   };
 
   const endCall = async () => {
-    console.log("Ending call");
     try {
       await supabase.from("calls").insert({
         caller_id: userId,
