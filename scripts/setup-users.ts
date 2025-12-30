@@ -68,11 +68,11 @@ async function addLocation(userId: string, lat: number, lng: number) {
 
 async function setup() {
   const users = [
-    { email: 'admin@chatify.dev', username: 'admin', isAdmin: true },
-    { email: 'user@chatify.dev', username: 'john_doe', isAdmin: false },
-    { email: 'tester1@chatify.dev', username: 'alex_test', isAdmin: false },
-    { email: 'tester2@chatify.dev', username: 'sarah_test', isAdmin: false },
-    { email: 'tester3@chatify.dev', username: 'mike_test', isAdmin: false },
+    { email: 'admin@orchids.dev', username: 'admin', isAdmin: true },
+    { email: 'user@orchids.dev', username: 'john_doe', isAdmin: false },
+    { email: 'tester1@orchids.dev', username: 'alex_test', isAdmin: false },
+    { email: 'tester2@orchids.dev', username: 'sarah_test', isAdmin: false },
+    { email: 'tester3@orchids.dev', username: 'mike_test', isAdmin: false },
   ]
 
   for (const u of users) {

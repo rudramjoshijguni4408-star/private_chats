@@ -51,10 +51,10 @@ export default function RootLayout({
           `}
         </Script>
         <Script
-          id="chatify-browser-logs"
+          id="orchids-browser-logs"
         src="https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/scripts/orchids-browser-logs.js"
         strategy="afterInteractive"
-        data-chatify-project-id="ab8aa1eb-ee32-49c1-b59a-946ad2dea163"
+        data-orchids-project-id="ab8aa1eb-ee32-49c1-b59a-946ad2dea163"
         />
         <ThemeProvider
           attribute="class"

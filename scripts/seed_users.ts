@@ -37,8 +37,8 @@ async function createTestUser(email: string, password: string, username: string,
 }
 
 async function main() {
-  await createTestUser('test-user@chatify.dev', 'TestPass123!', 'test_user', 'Test User');
-  await createTestUser('normal-user@chatify.dev', 'NormalPass123!', 'normal_user', 'Normal User');
+  await createTestUser('test-user@orchids.dev', 'TestPass123!', 'test_user', 'Test User');
+  await createTestUser('normal-user@orchids.dev', 'NormalPass123!', 'normal_user', 'Normal User');
 }
 
 main();
