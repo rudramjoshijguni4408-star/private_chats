@@ -303,10 +303,10 @@ export function UserDashboardView({ session, privateKey }: UserDashboardViewProp
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setMobileMenuOpen(false)} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] lg:hidden" />
             <motion.div initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }} transition={{ type: "spring", damping: 25, stiffness: 200 }} className="fixed top-0 left-0 bottom-0 w-[80%] max-w-sm bg-[#050505] border-r border-white/5 z-[101] lg:hidden p-6 flex flex-col">
-              <div className="flex items-center justify-between mb-12">
-                <h2 className="text-xl font-black italic tracking-tighter uppercase font-accent">Orchids <span className="text-indigo-500">Core</span></h2>
-                <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(false)} className="text-white/20 hover:text-white bg-white/5 rounded-xl"><X className="w-5 h-5" /></Button>
-              </div>
+                <div className="flex items-center justify-between mb-12">
+                  <h2 className="text-xl font-black italic tracking-tighter uppercase font-accent">Chatify <span className="text-indigo-500">Core</span></h2>
+                  <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(false)} className="text-white/20 hover:text-white bg-white/5 rounded-xl"><X className="w-5 h-5" /></Button>
+                </div>
               <div className="flex items-center gap-4 mb-12 p-4 bg-white/[0.02] border border-white/5 rounded-[2rem]">
                 <AvatarDisplay profile={myProfile} className="h-12 w-12" />
                 <div className="flex-1 min-w-0">
@@ -359,56 +359,56 @@ export function UserDashboardView({ session, privateKey }: UserDashboardViewProp
       </AnimatePresence>
 
       <motion.aside initial={{ x: -100, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className={`${sidebarOpen ? 'w-80' : 'w-24'} border-r border-white/5 bg-[#050505]/80 backdrop-blur-3xl flex flex-col transition-all duration-500 hidden lg:flex relative z-40 h-full overflow-hidden`}>
-        <div className={`p-6 border-b border-white/5 shrink-0 flex items-center ${sidebarOpen ? 'justify-between' : 'justify-center'}`}>
-          <div className="flex items-center gap-5">
-            <AvatarDisplay profile={myProfile} className="h-12 w-12" />
-            {sidebarOpen && <div className="flex-1 min-w-0"><p className="font-semibold text-sm uppercase tracking-tight truncate font-accent">{myProfile.username}</p></div>}
-          </div>
-          {sidebarOpen && <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(false)}><Menu className="w-5 h-5" /></Button>}
-        </div>
-        {!sidebarOpen && <div className="p-4 flex justify-center border-b border-white/5"><Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}><Menu className="w-5 h-5" /></Button></div>}
-          <nav className="flex-1 p-6 space-y-3">
-            {navItems.map((item) => {
-              const isActive = activeView === item.id;
-              return (
-                  <motion.button 
-                    key={item.id} 
-                    onClick={() => handleNavClick(item.id as ActiveView)} 
-                    className={`w-full flex items-center ${sidebarOpen ? 'gap-5 px-5' : 'justify-center'} py-4 rounded-xl transition-all relative group overflow-hidden ${
-                      isActive ? 'text-white bg-white/5 border border-white/10 shadow-[inset_0_0_20px_rgba(79,70,229,0.1)]' : 'text-white/30 hover:text-white hover:bg-white/[0.02]'
-                    }`}
-                  >
-                    {isActive && (
-                      <motion.div 
-                        layoutId="desktopIndicator" 
-                        className="absolute left-0 top-0 bottom-0 w-full z-20 pointer-events-none" 
-                        initial={false}
-                        style={{ 
-                          background: 'linear-gradient(90deg, rgba(79, 70, 229, 0.4) 0%, rgba(79, 70, 229, 0.1) 40%, rgba(79, 70, 229, 0) 100%)',
-                          borderLeft: '3px solid #6366f1',
-                          boxShadow: 'inset 10px 0 20px -10px rgba(79, 70, 229, 0.5)'
-                        }}
-                        transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                      />
-                    )}
-                    
-                    <item.icon className={`w-5 h-5 transition-transform relative z-10 ${isActive ? 'text-indigo-400 scale-110' : 'text-white/20 group-hover:text-white/40'}`} />
-                    {sidebarOpen && <span className="text-[10px] font-bold tracking-widest uppercase relative z-10 font-accent">{item.label}</span>}
-                  </motion.button>
-
-                );
-              })}
-            </nav>
-        </motion.aside>
-
-        <div className="flex-1 flex flex-col min-w-0 bg-[#030303] relative overflow-hidden h-full">
-          <header className="lg:hidden h-20 border-b border-white/5 bg-[#050505]/80 backdrop-blur-3xl flex items-center justify-between px-6 z-30 shrink-0">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(true)} className="text-white/20"><Menu className="w-6 h-6" /></Button>
-              <h1 className="text-lg font-black italic tracking-tighter uppercase font-accent">Orchids <span className="text-indigo-500">Core</span></h1>
+          <div className={`p-6 border-b border-white/5 shrink-0 flex items-center ${sidebarOpen ? 'justify-between' : 'justify-center'}`}>
+            <div className="flex items-center gap-5">
+              <AvatarDisplay profile={myProfile} className="h-12 w-12" />
+              {sidebarOpen && <div className="flex-1 min-w-0"><p className="font-semibold text-sm uppercase tracking-tight truncate font-accent">{myProfile.username}</p></div>}
             </div>
-            <AvatarDisplay profile={myProfile} className="h-10 w-10" />
-          </header>
+            {sidebarOpen && <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(false)}><Menu className="w-5 h-5" /></Button>}
+          </div>
+          {!sidebarOpen && <div className="p-4 flex justify-center border-b border-white/5"><Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}><Menu className="w-5 h-5" /></Button></div>}
+            <nav className="flex-1 p-6 space-y-3">
+              {navItems.map((item) => {
+                const isActive = activeView === item.id;
+                return (
+                    <motion.button 
+                      key={item.id} 
+                      onClick={() => handleNavClick(item.id as ActiveView)} 
+                      className={`w-full flex items-center ${sidebarOpen ? 'gap-5 px-5' : 'justify-center'} py-4 rounded-xl transition-all relative group overflow-hidden ${
+                        isActive ? 'text-white bg-white/5 border border-white/10 shadow-[inset_0_0_20px_rgba(79,70,229,0.1)]' : 'text-white/30 hover:text-white hover:bg-white/[0.02]'
+                      }`}
+                    >
+                      {isActive && (
+                        <motion.div 
+                          layoutId="desktopIndicator" 
+                          className="absolute left-0 top-0 bottom-0 w-full z-20 pointer-events-none" 
+                          initial={false}
+                          style={{ 
+                            background: 'linear-gradient(90deg, rgba(79, 70, 229, 0.4) 0%, rgba(79, 70, 229, 0.1) 40%, rgba(79, 70, 229, 0) 100%)',
+                            borderLeft: '3px solid #6366f1',
+                            boxShadow: 'inset 10px 0 20px -10px rgba(79, 70, 229, 0.5)'
+                          }}
+                          transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                        />
+                      )}
+                      
+                      <item.icon className={`w-5 h-5 transition-transform relative z-10 ${isActive ? 'text-indigo-400 scale-110' : 'text-white/20 group-hover:text-white/40'}`} />
+                      {sidebarOpen && <span className="text-[10px] font-bold tracking-widest uppercase relative z-10 font-accent">{item.label}</span>}
+                    </motion.button>
+  
+                  );
+                })}
+              </nav>
+          </motion.aside>
+  
+          <div className="flex-1 flex flex-col min-w-0 bg-[#030303] relative overflow-hidden h-full">
+            <header className="lg:hidden h-20 border-b border-white/5 bg-[#050505]/80 backdrop-blur-3xl flex items-center justify-between px-6 z-30 shrink-0">
+              <div className="flex items-center gap-4">
+                <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(true)} className="text-white/20"><Menu className="w-6 h-6" /></Button>
+                <h1 className="text-lg font-black italic tracking-tighter uppercase font-accent">Chatify <span className="text-indigo-500">Core</span></h1>
+              </div>
+              <AvatarDisplay profile={myProfile} className="h-10 w-10" />
+            </header>
 
           <main className="flex-1 min-h-0 overflow-hidden relative">
             <AnimatePresence mode="wait">

@@ -3,18 +3,18 @@
 
 import { useEffect, useState, useRef } from "react";
 
-export const CHANNEL = "ORCHIDS_HOVER_v1" as const;
-const VISUAL_EDIT_MODE_KEY = "orchids_visual_edit_mode" as const;
-const FOCUSED_ELEMENT_KEY = "orchids_focused_element" as const;
+export const CHANNEL = "CHATIFY_HOVER_v1" as const;
+const VISUAL_EDIT_MODE_KEY = "chatify_visual_edit_mode" as const;
+const FOCUSED_ELEMENT_KEY = "chatify_focused_element" as const;
 
 // Deduplicate helper for high-frequency traffic (HIT / FOCUS_MOVED / SCROLL)
 // -----------------------------------------------------------------------------
-let _orchidsLastMsg = "";
+let _chatifyLastMsg = "";
 const postMessageDedup = (data: any) => {
   try {
     const key = JSON.stringify(data);
-    if (key === _orchidsLastMsg) return; // identical – drop
-    _orchidsLastMsg = key;
+    if (key === _chatifyLastMsg) return; // identical – drop
+    _chatifyLastMsg = key;
   } catch {
     // if stringify fails, fall through
   }

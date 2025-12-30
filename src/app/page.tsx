@@ -175,7 +175,7 @@ export default function Home() {
       <PasswordGate 
         correctPassword="162008" 
         onUnlock={handleAppUnlock}
-        title="Nexus OS"
+        title="Chatify Core"
         subtitle="System Lock"
         description="Authorization required to initialize kernel sequence."
       />
@@ -195,7 +195,7 @@ export default function Home() {
             <Shield className="w-10 h-10 text-indigo-500 animate-pulse" />
         </div>
         <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 w-48 text-center">
-            <p className="text-[10px] font-medium uppercase tracking-[0.5em] text-indigo-500/50">Booting Nexus OS</p>
+            <p className="text-[10px] font-medium uppercase tracking-[0.5em] text-indigo-500/50">Booting Chatify Core</p>
         </div>
       </div>
     </div>
@@ -283,7 +283,7 @@ export default function Home() {
                     </div>
                   </div>
                   <div className="flex flex-col">
-                    <h1 className="text-xl font-black italic tracking-tighter uppercase text-white leading-none">Orchids <span className="text-indigo-400">v2</span></h1>
+                    <h1 className="text-xl font-black italic tracking-tighter uppercase text-white leading-none">Chatify <span className="text-indigo-400">v2</span></h1>
                     <div className="flex items-center gap-2 mt-1">
                         <div className="w-1 h-1 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
                         <span className="text-[8px] font-medium uppercase tracking-[0.4em] text-white/40">Secure Node</span>
