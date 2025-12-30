@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AvatarDisplay } from "@/components/AvatarDisplay";
-import { Chat } from "@/components/Chat";
+import { ChatifyWindow } from "@/components/ChatifyWindow";
 import { Stories } from "@/components/Stories";
 import { ProfileSettings } from "@/components/ProfileSettings";
 import { VideoCall } from "@/components/VideoCall";
@@ -59,15 +59,6 @@ export function UserDashboardView({ session, privateKey }: UserDashboardViewProp
     }, []);
 
       useEffect(() => {
-        // Register Service Worker for mobile/background notifications
-        if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.register('/sw.js').then((registration) => {
-            console.log('Service Worker registered with scope:', registration.scope);
-          }).catch((error) => {
-            console.error('Service Worker registration failed:', error);
-          });
-        }
-
         fetchProfile();
         fetchProfiles();
         fetchRecentChats();
@@ -81,7 +72,6 @@ export function UserDashboardView({ session, privateKey }: UserDashboardViewProp
             if (document.visibilityState === 'visible') {
               updateOnlineStatus(true);
             } else {
-              // Quick update for offline status
               setTimeout(() => {
                 if (document.visibilityState !== 'visible') {
                   updateOnlineStatus(false);
@@ -91,14 +81,10 @@ export function UserDashboardView({ session, privateKey }: UserDashboardViewProp
           };
 
         const handleFocus = () => updateOnlineStatus(true);
-        // Removed aggressive blur tracking as it causes "offline" when user is still looking
-        // const handleBlur = () => updateOnlineStatus(false);
-
         document.addEventListener('visibilitychange', handleVisibilityChange);
         window.addEventListener('focus', handleFocus);
         window.addEventListener('beforeunload', () => updateOnlineStatus(false));
 
-        // Initial status
         if (document.visibilityState === 'visible') {
           updateOnlineStatus(true);
         }
@@ -109,11 +95,7 @@ export function UserDashboardView({ session, privateKey }: UserDashboardViewProp
           }
           fetchUnviewedSnapshots();
           supabase.rpc('purge_viewed_content');
-        }, 10000); // Reduced to 10s for more "immediate" status
-
-        if ("Notification" in window && Notification.permission === "default") {
-          Notification.requestPermission();
-        }
+        }, 10000); 
 
         return () => {
           clearInterval(interval);
@@ -125,7 +107,7 @@ export function UserDashboardView({ session, privateKey }: UserDashboardViewProp
       }, [session.user.id]);
 
       async function updateOnlineStatus(online: boolean = true) {
-        // No-op here, handled by Home component
+        // Heartbeat logic
       }
 
 
@@ -184,52 +166,18 @@ export function UserDashboardView({ session, privateKey }: UserDashboardViewProp
       setUnreadCount(count || 0);
     }
 
-    async function showNotification(title: string, options?: NotificationOptions) {
-      // Play sound
-      if (notificationSound.current) {
-        notificationSound.current.play().catch(e => console.error("Sound play failed:", e));
-      }
-
-      // Show browser notification via Service Worker if available for better mobile/background support
-      if ('serviceWorker' in navigator && 'Notification' in window && Notification.permission === "granted") {
-        const registration = await navigator.serviceWorker.ready;
-        registration.showNotification(title, {
-          icon: "/icon.png",
-          badge: "/icon.png",
-          vibrate: [100, 50, 100],
-          ...options
-        } as any);
-      } else if ("Notification" in window && Notification.permission === "granted") {
-        try {
-          const n = new Notification(title, {
-            icon: "/icon.png",
-            badge: "/icon.png",
-            ...options
-          });
-          n.onclick = () => {
-            window.focus();
-            n.close();
-          };
-        } catch (e) {
-          console.error("Browser notification failed:", e);
-        }
-      }
-    }
-
     const presenceChannelRef = useRef<any>(null);
 
     function setupRealtimeSubscriptions() {
       const broadcastsChannel = supabase.channel("global-broadcasts").on("postgres_changes", { event: "INSERT", schema: "public", table: "broadcasts" }, (payload) => {
         setBroadcasts([payload.new]);
         toast.info("Global Broadcast Received", { description: payload.new.content, icon: <Radio className="w-4 h-4 text-indigo-500" /> });
-        showNotification("Global Broadcast", { body: payload.new.content });
       }).subscribe();
 
       const messagesChannel = supabase.channel("dashboard-messages").on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `receiver_id=eq.${session.user.id}` }, (payload) => {
         fetchRecentChats();
         fetchUnreadCount();
         toast.info("New message received");
-        showNotification("New Message", { body: "You have received a new intelligence packet." });
       }).subscribe();
 
       const callsChannel = supabase.channel("incoming-calls").on("postgres_changes", { event: "INSERT", schema: "public", table: "calls", filter: `receiver_id=eq.${session.user.id}` }, async (payload) => {
@@ -238,8 +186,6 @@ export function UserDashboardView({ session, privateKey }: UserDashboardViewProp
           const { data: caller } = await supabase.from("profiles").select("*").eq("id", data.caller_id).single();
           if (caller) {
             setIncomingCall({ ...data, caller });
-            toast.info(`Incoming ${data.call_mode} call from ${caller.username}`, { duration: 10000 });
-            showNotification(`Incoming ${data.call_mode} call`, { body: `Call from ${caller.username}` });
           }
         }
       }).subscribe();
@@ -248,8 +194,7 @@ export function UserDashboardView({ session, privateKey }: UserDashboardViewProp
         if (payload.new.user_id !== session.user.id) {
           const { data: creator } = await supabase.from("profiles").select("username").eq("id", payload.new.user_id).single();
           if (creator) {
-            toast.info(`New story from ${creator.username}`, { icon: <Camera className="w-4 h-4 text-pink-500" /> });
-            showNotification("New Story", { body: `${creator.username} shared a new temporal snapshot.` });
+            toast.info(`New story from ${creator.username}`);
           }
         }
       }).subscribe();
@@ -278,11 +223,11 @@ export function UserDashboardView({ session, privateKey }: UserDashboardViewProp
   };
 
   const navItems = [
-    { id: "dashboard", icon: Home, label: "Nexus" },
-    { id: "chat", icon: MessageCircle, label: "Signals", badge: unreadCount },
+    { id: "dashboard", icon: Home, label: "Dashboard" },
+    { id: "chat", icon: MessageCircle, label: "Messages", badge: unreadCount },
     { id: "vault", icon: Shield, label: "Vault" },
-    { id: "calls", icon: Phone, label: "Uplink" },
-    { id: "settings", icon: Settings, label: "Entity" },
+    { id: "calls", icon: Phone, label: "Calls" },
+    { id: "settings", icon: Settings, label: "Profile" },
   ];
 
   if (!myProfile) {
@@ -290,7 +235,7 @@ export function UserDashboardView({ session, privateKey }: UserDashboardViewProp
       <div className="flex h-[100dvh] items-center justify-center bg-[#030303]">
         <div className="flex flex-col items-center gap-6">
           <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/30">Syncing Node</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/30">Connecting to Chatify...</p>
         </div>
       </div>
     );
@@ -304,14 +249,14 @@ export function UserDashboardView({ session, privateKey }: UserDashboardViewProp
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setMobileMenuOpen(false)} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] lg:hidden" />
             <motion.div initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }} transition={{ type: "spring", damping: 25, stiffness: 200 }} className="fixed top-0 left-0 bottom-0 w-[80%] max-w-sm bg-[#050505] border-r border-white/5 z-[101] lg:hidden p-6 flex flex-col">
               <div className="flex items-center justify-between mb-12">
-                <h2 className="text-xl font-black italic tracking-tighter uppercase font-accent">Orchids <span className="text-indigo-500">Core</span></h2>
+                <h2 className="text-xl font-black italic tracking-tighter uppercase">Chatify <span className="text-indigo-500">v2</span></h2>
                 <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(false)} className="text-white/20 hover:text-white bg-white/5 rounded-xl"><X className="w-5 h-5" /></Button>
               </div>
               <div className="flex items-center gap-4 mb-12 p-4 bg-white/[0.02] border border-white/5 rounded-[2rem]">
                 <AvatarDisplay profile={myProfile} className="h-12 w-12" />
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm uppercase tracking-tight truncate leading-tight font-accent">{myProfile.username}</p>
-                  <p className="text-[9px] font-medium text-emerald-500/80 uppercase tracking-wider mt-0.5 font-sans">Online</p>
+                  <p className="font-semibold text-sm uppercase tracking-tight truncate leading-tight">{myProfile.username}</p>
+                  <p className="text-[9px] font-medium text-emerald-500/80 uppercase tracking-wider mt-0.5">Online</p>
                 </div>
               </div>
                 <nav className="flex-1 space-y-1">
@@ -346,13 +291,13 @@ export function UserDashboardView({ session, privateKey }: UserDashboardViewProp
                           )}
                           
                           <item.icon className={`w-4 h-4 transition-transform relative z-10 ${isActive ? 'text-indigo-400 scale-110' : 'text-white/20 group-hover:text-white/40'}`} />
-                          <span className="text-[10px] font-bold tracking-widest uppercase leading-none relative z-10 font-accent">{item.label}</span>
+                          <span className="text-[10px] font-bold tracking-widest uppercase leading-none relative z-10">{item.label}</span>
                         </motion.button>
 
                     );
                   })}
                 </nav>
-              <Button variant="ghost" onClick={() => supabase.auth.signOut()} className="mt-auto w-full justify-start gap-4 text-white/20 hover:text-red-400 hover:bg-red-500/10 rounded-[2rem] h-14 px-6 font-accent"><LogOut className="w-5 h-5" /><span className="text-[11px] font-black uppercase tracking-[0.2em]">Sign Out</span></Button>
+              <Button variant="ghost" onClick={() => supabase.auth.signOut()} className="mt-auto w-full justify-start gap-4 text-white/20 hover:text-red-400 hover:bg-red-500/10 rounded-[2rem] h-14 px-6"><LogOut className="w-5 h-5" /><span className="text-[11px] font-black uppercase tracking-[0.2em]">Sign Out</span></Button>
             </motion.div>
           </>
         )}
@@ -362,7 +307,7 @@ export function UserDashboardView({ session, privateKey }: UserDashboardViewProp
         <div className={`p-6 border-b border-white/5 shrink-0 flex items-center ${sidebarOpen ? 'justify-between' : 'justify-center'}`}>
           <div className="flex items-center gap-5">
             <AvatarDisplay profile={myProfile} className="h-12 w-12" />
-            {sidebarOpen && <div className="flex-1 min-w-0"><p className="font-semibold text-sm uppercase tracking-tight truncate font-accent">{myProfile.username}</p></div>}
+            {sidebarOpen && <div className="flex-1 min-w-0"><p className="font-semibold text-sm uppercase tracking-tight truncate">Chatify User</p></div>}
           </div>
           {sidebarOpen && <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(false)}><Menu className="w-5 h-5" /></Button>}
         </div>
@@ -393,7 +338,7 @@ export function UserDashboardView({ session, privateKey }: UserDashboardViewProp
                     )}
                     
                     <item.icon className={`w-5 h-5 transition-transform relative z-10 ${isActive ? 'text-indigo-400 scale-110' : 'text-white/20 group-hover:text-white/40'}`} />
-                    {sidebarOpen && <span className="text-[10px] font-bold tracking-widest uppercase relative z-10 font-accent">{item.label}</span>}
+                    {sidebarOpen && <span className="text-[10px] font-bold tracking-widest uppercase relative z-10">{item.label}</span>}
                   </motion.button>
 
                 );
@@ -405,7 +350,7 @@ export function UserDashboardView({ session, privateKey }: UserDashboardViewProp
           <header className="lg:hidden h-20 border-b border-white/5 bg-[#050505]/80 backdrop-blur-3xl flex items-center justify-between px-6 z-30 shrink-0">
             <div className="flex items-center gap-4">
               <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(true)} className="text-white/20"><Menu className="w-6 h-6" /></Button>
-              <h1 className="text-lg font-black italic tracking-tighter uppercase font-accent">Orchids <span className="text-indigo-500">Core</span></h1>
+              <h1 className="text-lg font-black italic tracking-tighter uppercase">Chatify</h1>
             </div>
             <AvatarDisplay profile={myProfile} className="h-10 w-10" />
           </header>
@@ -422,9 +367,9 @@ export function UserDashboardView({ session, privateKey }: UserDashboardViewProp
                   )}
                   <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                     {[
-                      { label: "Signals", value: unreadCount, icon: MessageCircle, color: "from-indigo-600 to-indigo-700" },
-                      { label: "Nodes", value: onlineUsers.size, icon: Users, color: "from-emerald-600 to-emerald-700" },
-                      { label: "Entities", value: profiles.length, icon: User, color: "from-purple-600 to-purple-700" },
+                      { label: "Messages", value: unreadCount, icon: MessageCircle, color: "from-indigo-600 to-indigo-700" },
+                      { label: "Online", value: onlineUsers.size, icon: Users, color: "from-emerald-600 to-emerald-700" },
+                      { label: "Contacts", value: profiles.length, icon: User, color: "from-purple-600 to-purple-700" },
                       { label: "Security", value: "E2EE", icon: Shield, color: "from-orange-600 to-orange-700" }
                     ].map((stat, i) => (
                       <div key={i} className={`bg-gradient-to-br ${stat.color} p-6 rounded-[2rem] shadow-xl`}>
@@ -435,29 +380,29 @@ export function UserDashboardView({ session, privateKey }: UserDashboardViewProp
                     ))}
                   </div>
                   <div className="bg-white/[0.02] border border-white/5 rounded-[2.5rem] p-6">
-                    <div className="flex items-center gap-4 mb-6"><Camera className="w-5 h-5 text-indigo-400" /><h3 className="text-sm font-black uppercase tracking-[0.3em] font-accent">Temporal Stories</h3></div>
+                    <div className="flex items-center gap-4 mb-6"><Camera className="w-5 h-5 text-indigo-400" /><h3 className="text-sm font-black uppercase tracking-[0.3em]">Temporal Stories</h3></div>
                     <Stories userId={session.user.id} />
                   </div>
                   <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                     <div className="bg-white/[0.02] border border-white/5 rounded-[2rem] p-6">
-                      <h3 className="text-sm font-black uppercase tracking-[0.3em] mb-6 font-accent">Recent Channels</h3>
+                      <h3 className="text-sm font-black uppercase tracking-[0.3em] mb-6">Recent Chats</h3>
                       <div className="space-y-2">
                         {recentChats.map(chat => (
                           <button key={chat.id} onClick={() => { setSelectedContact(chat); setActiveView("chat"); }} className="w-full flex items-center gap-4 p-4 hover:bg-white/5 rounded-2xl transition-all">
                             <AvatarDisplay profile={chat} className="h-10 w-10" />
-                            <div className="flex-1 text-left"><p className="font-black text-sm uppercase italic font-accent">{chat.username}</p></div>
+                            <div className="flex-1 text-left"><p className="font-black text-sm uppercase italic">{chat.username}</p></div>
                             <ChevronRight className="w-4 h-4 text-white/10" />
                           </button>
                         ))}
                       </div>
                     </div>
                     <div className="bg-white/[0.02] border border-white/5 rounded-[2rem] p-6">
-                      <h3 className="text-sm font-black uppercase tracking-[0.3em] mb-6 font-accent">Global Nodes</h3>
+                      <h3 className="text-sm font-black uppercase tracking-[0.3em] mb-6">Discovery</h3>
                       <div className="grid grid-cols-2 gap-3">
                         {profiles.map(p => (
                           <div key={p.id} onClick={() => { setSelectedContact(p); setActiveView("chat"); }} className="p-4 bg-white/[0.02] border border-white/5 rounded-2xl flex flex-col items-center gap-3 cursor-pointer hover:border-indigo-500/30">
                             <AvatarDisplay profile={p} className="h-10 w-10" />
-                            <p className="text-[10px] font-black uppercase font-accent">{p.username}</p>
+                            <p className="text-[10px] font-black uppercase">{p.username}</p>
                           </div>
                         ))}
                       </div>
@@ -474,18 +419,18 @@ export function UserDashboardView({ session, privateKey }: UserDashboardViewProp
                             sessionStorage.setItem("chat_unlocked", "true");
                             setIsChatUnlocked(true);
                           }}
-                          title="Signal Uplink"
-                          subtitle="Encrypted Channel"
-                          description="Authorization code required to decrypt message matrix."
+                          title="Secure Uplink"
+                          subtitle="Access Denied"
+                          description="Please enter the master key to unlock Chatify communications."
                         />
                       ) : !selectedContact ? (
                         <div className="h-full flex flex-col p-8">
                           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-                            <h2 className="text-2xl font-black uppercase italic font-accent">Signal Channels</h2>
+                            <h2 className="text-2xl font-black uppercase italic">Messages</h2>
                             <div className="relative group w-full md:w-80">
                               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-indigo-400 transition-colors" />
                               <input 
-                                placeholder="Search channels..."
+                                placeholder="Search conversations..."
                                 value={chatSearchQuery}
                                 onChange={(e) => setChatSearchQuery(e.target.value)}
                                 className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-3 pl-12 pr-6 text-sm outline-none focus:border-indigo-500/50 transition-all placeholder:text-white/10"
@@ -496,7 +441,7 @@ export function UserDashboardView({ session, privateKey }: UserDashboardViewProp
                             {profiles.filter(p => p.username.toLowerCase().includes(chatSearchQuery.toLowerCase())).length === 0 ? (
                               <div className="col-span-full py-20 text-center opacity-20">
                                 <Search className="w-12 h-12 mx-auto mb-4" />
-                                <p className="text-sm font-black uppercase tracking-widest">No matching channels found</p>
+                                <p className="text-sm font-black uppercase tracking-widest">No nodes found</p>
                               </div>
                             ) : (
                               profiles
@@ -505,7 +450,7 @@ export function UserDashboardView({ session, privateKey }: UserDashboardViewProp
                                     <button key={p.id} onClick={() => { setSelectedContact(p); if (window.innerWidth < 1024) setActiveView("chat"); }} className="flex items-center gap-4 p-6 bg-white/[0.02] border border-white/5 rounded-[2.5rem] hover:bg-white/[0.05] transition-all group">
                                       <AvatarDisplay profile={p} className="h-14 w-14 group-hover:scale-110 transition-transform" />
                                       <div className="flex-1 text-left">
-                                        <p className="font-black text-lg uppercase italic font-accent">{p.username}</p>
+                                        <p className="font-black text-lg uppercase italic">{p.username}</p>
                                         <div className="flex items-center gap-2">
                                             <div className={`w-1.5 h-1.5 rounded-full ${onlineUsers.has(p.id) ? 'bg-emerald-500 animate-pulse' : 'bg-white/10'}`} />
                                             <p className="text-[10px] font-bold uppercase tracking-widest text-white/30">{onlineUsers.has(p.id) ? 'Online' : 'Offline'}</p>
@@ -519,7 +464,7 @@ export function UserDashboardView({ session, privateKey }: UserDashboardViewProp
                             </div>
                           </div>
                         ) : (
-                            <Chat 
+                            <ChatifyWindow 
                               session={session} 
                               privateKey={privateKey} 
                               initialContact={selectedContact} 
@@ -542,10 +487,10 @@ export function UserDashboardView({ session, privateKey }: UserDashboardViewProp
                     {profiles.map(p => (
                       <div key={p.id} className="p-6 bg-white/[0.02] border border-white/5 rounded-3xl flex flex-col items-center gap-4">
                         <AvatarDisplay profile={p} className="h-16 w-16" />
-                        <p className="font-black text-lg uppercase font-accent">{p.username}</p>
+                        <p className="font-black text-lg uppercase">{p.username}</p>
                         <div className="flex gap-2 w-full">
-                          <Button onClick={() => setActiveCall({ contact: p, mode: "voice", isInitiator: true })} className="flex-1 bg-emerald-600 font-accent uppercase text-[10px]">Voice</Button>
-                          <Button onClick={() => setActiveCall({ contact: p, mode: "video", isInitiator: true })} className="flex-1 bg-indigo-600 font-accent uppercase text-[10px]">Video</Button>
+                          <Button onClick={() => setActiveCall({ contact: p, mode: "voice", isInitiator: true })} className="flex-1 bg-emerald-600 uppercase text-[10px]">Voice</Button>
+                          <Button onClick={() => setActiveCall({ contact: p, mode: "video", isInitiator: true })} className="flex-1 bg-indigo-600 uppercase text-[10px]">Video</Button>
                         </div>
                       </div>
                     ))}
@@ -566,7 +511,7 @@ export function UserDashboardView({ session, privateKey }: UserDashboardViewProp
               <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/60 backdrop-blur-md">
                 <div className="bg-[#0a0a0a] border border-white/10 rounded-[3rem] p-10 max-w-sm w-full text-center space-y-8">
                   <AvatarDisplay profile={incomingCall.caller} className="h-32 w-32 mx-auto" />
-                  <h3 className="text-4xl font-black italic uppercase font-accent">{incomingCall.caller.username}</h3>
+                  <h3 className="text-4xl font-black italic uppercase">{incomingCall.caller.username}</h3>
                   <div className="flex gap-4">
                     <Button onClick={() => setIncomingCall(null)} className="flex-1 bg-red-600">Decline</Button>
                     <Button onClick={() => { setActiveCall({ contact: incomingCall.caller, mode: incomingCall.call_mode, isInitiator: false, incomingSignal: JSON.parse(incomingCall.signal_data) }); setIncomingCall(null); }} className="flex-1 bg-emerald-600">Accept</Button>
@@ -587,7 +532,7 @@ export function UserDashboardView({ session, privateKey }: UserDashboardViewProp
                       >
                         <item.icon className={`w-5 h-5 transition-all duration-300 ${isActive ? 'text-indigo-400 scale-110 drop-shadow-[0_0_12px_rgba(99,102,241,0.6)]' : 'group-hover:text-white/50'}`} />
                         
-                          <span className={`text-[8px] font-black uppercase tracking-[0.2em] font-accent leading-none transition-all ${isActive ? 'text-white' : 'text-white/40'}`}>{item.label}</span>
+                          <span className={`text-[8px] font-black uppercase tracking-[0.2em] leading-none transition-all ${isActive ? 'text-white' : 'text-white/40'}`}>{item.label}</span>
   
                           {isActive && (
                             <motion.div 
