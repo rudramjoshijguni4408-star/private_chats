@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AvatarDisplay } from "@/components/AvatarDisplay";
-import { ChatifyWindow as Chat } from "@/components/ChatifyWindow";
+import { Chat } from "@/components/Chat";
 import { Stories } from "@/components/Stories";
 import { ProfileSettings } from "@/components/ProfileSettings";
 import { VideoCall } from "@/components/VideoCall";
