@@ -38,9 +38,10 @@ export function VideoCall({
   const [isMinimized, setIsMinimized] = useState(false);
   const [isSpeakerOn, setIsSpeakerOn] = useState(true);
   
-  const myVideo = useRef<HTMLVideoElement>(null);
-  const userVideo = useRef<HTMLVideoElement>(null);
-  const peerConnection = useRef<RTCPeerConnection | null>(null);
+    const myVideo = useRef<HTMLVideoElement>(null);
+    const userVideo = useRef<HTMLVideoElement>(null);
+    const remoteAudioRef = useRef<HTMLAudioElement>(null);
+    const peerConnection = useRef<RTCPeerConnection | null>(null);
   const channelRef = useRef<any>(null);
   const hasAnswered = useRef(false);
   const iceCandidateQueue = useRef<RTCIceCandidateInit[]>([]);
@@ -90,6 +91,12 @@ export function VideoCall({
       setRemoteStream(remoteStreamFromEvent);
       if (userVideo.current) {
         userVideo.current.srcObject = remoteStreamFromEvent;
+        // Ensure remote stream plays
+        userVideo.current.play().catch(e => console.error("Remote video play failed:", e));
+      }
+      if (remoteAudioRef.current) {
+        remoteAudioRef.current.srcObject = remoteStreamFromEvent;
+        remoteAudioRef.current.play().catch(e => console.error("Remote audio play failed:", e));
       }
       setIsConnecting(false);
       setConnectionStatus("Connected");
@@ -403,14 +410,17 @@ export function VideoCall({
       animate={{ opacity: 1 }}
       className="fixed inset-0 z-[100] bg-[#050505] flex flex-col items-center justify-center p-4 sm:p-8 md:p-12 overflow-hidden"
     >
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-indigo-500/5 blur-[180px] rounded-full animate-pulse" />
-        <div className="absolute bottom-0 left-0 w-[800px] h-[800px] bg-blue-500/5 blur-[180px] rounded-full animate-pulse delay-1000" />
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 contrast-150" />
-      </div>
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-indigo-500/5 blur-[120px] rounded-full animate-pulse" />
+          <div className="absolute bottom-0 left-0 w-[800px] h-[800px] bg-blue-500/5 blur-[120px] rounded-full animate-pulse delay-1000" />
+        </div>
 
       {initialCallType === "voice" && remoteStream && (
-        <audio ref={userVideo as any} autoPlay playsInline />
+        <audio ref={remoteAudioRef} autoPlay playsInline />
+      )}
+      
+      {initialCallType === "video" && remoteStream && (
+        <audio ref={remoteAudioRef} autoPlay playsInline className="hidden" />
       )}
 
       <motion.div 

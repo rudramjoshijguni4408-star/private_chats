@@ -427,8 +427,8 @@ export function Chat({ session, privateKey, initialContact, isPartnerOnline, onB
         }
       `}</style>
 
-            {/* Header */}
-            <header className="h-20 border-b border-white/5 bg-black/40 backdrop-blur-xl flex items-center justify-between px-6 z-20 shrink-0">
+          {/* Header */}
+          <header className="h-20 border-b border-white/5 bg-black/40 backdrop-blur-3xl flex items-center justify-between px-6 z-20 shrink-0">
               <div className="flex items-center gap-4">
                   <Button 
                     variant="ghost" 
@@ -637,7 +637,7 @@ export function Chat({ session, privateKey, initialContact, isPartnerOnline, onB
         </div>
 
         {/* Input Area */}
-      <footer className="p-6 bg-black/40 backdrop-blur-xl border-t border-white/5 relative z-30 shrink-0">
+      <footer className="p-6 bg-black/40 backdrop-blur-3xl border-t border-white/5 relative z-30 shrink-0">
         <div className="flex items-center gap-3 relative">
           <Button 
             variant="ghost" 

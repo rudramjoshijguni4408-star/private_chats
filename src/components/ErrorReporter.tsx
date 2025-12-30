@@ -103,9 +103,9 @@ export default function ErrorReporter({ error, reset }: ReporterProps) {
             <h1 className="text-2xl font-bold text-destructive">
               Something went wrong!
             </h1>
-            <p className="text-muted-foreground">
-              An unexpected error occurred. Please try again fixing with Orchids
-            </p>
+              <p className="text-muted-foreground">
+                An unexpected error occurred. Please try again fixing with Chatify
+              </p>
           </div>
           <div className="space-y-2">
             {process.env.NODE_ENV === "development" && (

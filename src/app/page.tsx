@@ -253,10 +253,9 @@ export default function Home() {
   return (
     <main className="min-h-[100dvh] bg-[#010101] text-foreground overflow-hidden relative selection:bg-indigo-500/30">
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-10%] left-[-10%] w-[1000px] h-[1000px] bg-indigo-600/10 blur-[150px] rounded-full" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[1000px] h-[1000px] bg-purple-600/5 blur-[150px] rounded-full" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,rgba(79,70,229,0.03)_0%,transparent_70%)]" />
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.04] contrast-150 brightness-125" />
+        <div className="absolute top-[-10%] left-[-10%] w-[1000px] h-[1000px] bg-indigo-600/5 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[1000px] h-[1000px] bg-purple-600/5 blur-[120px] rounded-full" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,rgba(79,70,229,0.02)_0%,transparent_70%)]" />
       </div>
 
       <AnimatePresence mode="wait">
@@ -283,7 +282,7 @@ export default function Home() {
                     </div>
                   </div>
                   <div className="flex flex-col">
-                    <h1 className="text-xl font-black italic tracking-tighter uppercase text-white leading-none">Orchids <span className="text-indigo-400">v2</span></h1>
+                    <h1 className="text-xl font-black italic tracking-tighter uppercase text-white leading-none">Chatify <span className="text-indigo-400">v2</span></h1>
                     <div className="flex items-center gap-2 mt-1">
                         <div className="w-1 h-1 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
                         <span className="text-[8px] font-medium uppercase tracking-[0.4em] text-white/40">Secure Node</span>

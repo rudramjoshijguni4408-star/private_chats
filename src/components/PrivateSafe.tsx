@@ -521,7 +521,7 @@ interface SafeItem {
 
   return (
     <div className="fixed inset-0 z-[110] bg-zinc-950 flex flex-col font-sans">
-      <div className="p-6 border-b border-zinc-900 bg-zinc-950/80 backdrop-blur-xl flex items-center justify-between pt-12">
+      <div className="p-6 border-b border-zinc-900 bg-zinc-950/80 backdrop-blur-3xl flex items-center justify-between pt-12">
         <div className="flex items-center gap-4">
           <div className="p-3 bg-indigo-500/10 rounded-2xl border border-indigo-500/20">
             <ShieldCheck className="w-6 h-6 text-indigo-500" />

@@ -46,7 +46,7 @@ export function PasswordGate({
         className="z-10 w-full max-w-md space-y-12"
       >
         <div className="flex justify-center">
-            <div className="p-8 bg-white/[0.02] border border-white/10 rounded-[2.5rem] backdrop-blur-xl shadow-2xl relative group">
+          <div className="p-8 bg-white/[0.02] border border-white/10 rounded-[2.5rem] backdrop-blur-3xl shadow-2xl relative group">
             <div className="absolute inset-0 bg-indigo-500/20 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
             <Shield className="w-12 h-12 text-indigo-500 relative" />
           </div>
