@@ -477,12 +477,12 @@ export function Chat({ session, privateKey, initialContact, isPartnerOnline, onB
             <p className="text-[10px] font-black uppercase tracking-[0.4em]">End-to-End Encrypted</p>
           </div>
         ) : (
-          messages.map((msg, i) => {
-            const isMe = msg.sender_id === session.user.id;
-            return (
-              <motion.div 
-                key={msg.id}
-                initial={{ opacity: 0, x: isMe ? 20 : -20 }}
+            messages.map((msg, i) => {
+              const isMe = msg.sender_id === session.user.id;
+              return (
+                <motion.div 
+                  key={msg.id || `msg-${i}`}
+                  initial={{ opacity: 0, x: isMe ? 20 : -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 className={`flex ${isMe ? "justify-end" : "justify-start"}`}
               >
