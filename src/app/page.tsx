@@ -175,7 +175,7 @@ export default function Home() {
       <PasswordGate 
         correctPassword="162008" 
         onUnlock={handleAppUnlock}
-        title="Nexus OS"
+        title="Chatify"
         subtitle="System Lock"
         description="Authorization required to initialize kernel sequence."
       />
@@ -195,7 +195,7 @@ export default function Home() {
             <Shield className="w-10 h-10 text-indigo-500 animate-pulse" />
         </div>
         <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 w-48 text-center">
-            <p className="text-[10px] font-medium uppercase tracking-[0.5em] text-indigo-500/50">Booting Chatify OS</p>
+            <p className="text-[10px] font-medium uppercase tracking-[0.5em] text-indigo-500/50">Booting Chatify</p>
         </div>
       </div>
     </div>
@@ -298,7 +298,7 @@ export default function Home() {
                     transition={{ delay: 0.3 }}
                     className="text-3xl lg:text-5xl font-black italic tracking-tighter uppercase text-white leading-[0.9] filter drop-shadow-[0_20px_50px_rgba(0,0,0,0.8)]"
                   >
-                    NEXUS <br />
+                    CHATIFY <br />
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-indigo-600">PROTOCOL</span>
                   </motion.h2>
                   <p className="text-xs text-zinc-400 font-medium max-w-sm leading-relaxed tracking-wide border-l border-indigo-600 pl-3">
