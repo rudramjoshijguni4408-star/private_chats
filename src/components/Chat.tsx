@@ -381,11 +381,29 @@ export function Chat({ session, privateKey, initialContact, isPartnerOnline, onB
       }
     };
 
+    const toggleSaveSnapshot = async (message: any) => {
+      const newSavedState = !message.is_saved;
+      const { error } = await supabase
+        .from("messages")
+        .update({ is_saved: newSavedState })
+        .eq("id", message.id);
+
+      if (error) {
+        toast.error("Failed to update intelligence status");
+      } else {
+        setMessages(prev => prev.map(m => m.id === message.id ? { ...m, is_saved: newSavedState } : m));
+        setShowSnapshotView(prev => prev?.id === message.id ? { ...prev, is_saved: newSavedState } : prev);
+        toast.success(newSavedState ? "Intelligence secured in node" : "Intelligence set to self-destruct");
+      }
+    };
+
     const closeSnapshot = async () => {
       if (showSnapshotView && showSnapshotView.receiver_id === session.user.id) {
-        // Purge immediately upon closing
-        await supabase.from("messages").delete().eq("id", showSnapshotView.id);
-        setMessages(prev => prev.filter(m => m.id !== showSnapshotView.id));
+        if (!showSnapshotView.is_saved) {
+          // Purge immediately upon closing if NOT saved
+          await supabase.from("messages").delete().eq("id", showSnapshotView.id);
+          setMessages(prev => prev.filter(m => m.id !== showSnapshotView.id));
+        }
       }
       setShowSnapshotView(null);
     };
@@ -487,45 +505,62 @@ export function Chat({ session, privateKey, initialContact, isPartnerOnline, onB
                 className={`flex ${isMe ? "justify-end" : "justify-start"}`}
               >
                 <div className={`max-w-[80%] flex flex-col ${isMe ? "items-end" : "items-start"}`}>
-                  {msg.media_type === 'snapshot' ? (
-                    <button 
-                      onClick={() => openSnapshot(msg)}
-                      className={`group relative p-4 rounded-[2rem] border transition-all ${
-                        msg.is_viewed && !isMe 
-                          ? "bg-zinc-900/50 border-white/5 opacity-50 cursor-not-allowed" 
-                          : "bg-purple-600/10 border-purple-500/30 hover:bg-purple-600/20"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-purple-500/20 flex items-center justify-center">
-                          {msg.is_viewed && !isMe ? <EyeOff className="w-5 h-5 text-purple-400" /> : <Camera className="w-5 h-5 text-purple-400" />}
+                    {msg.media_type === 'snapshot' ? (
+                      <button 
+                        onClick={() => openSnapshot(msg)}
+                        className={`group relative p-4 rounded-[2rem] border transition-all ${
+                          msg.is_saved 
+                            ? "bg-yellow-500/10 border-yellow-500/50 shadow-[0_0_20px_rgba(234,179,8,0.2)]"
+                            : msg.is_viewed && !isMe 
+                            ? "bg-zinc-900/50 border-white/5 opacity-50 cursor-not-allowed" 
+                            : "bg-purple-600/10 border-purple-500/30 hover:bg-purple-600/20"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${msg.is_saved ? "bg-yellow-500/20" : "bg-purple-500/20"}`}>
+                            {msg.is_saved ? <Save className="w-5 h-5 text-yellow-500" /> : (msg.is_viewed && !isMe ? <EyeOff className="w-5 h-5 text-purple-400" /> : <Camera className="w-5 h-5 text-purple-400" />)}
+                          </div>
+                          <div className="text-left">
+                            <p className={`text-[10px] font-black uppercase tracking-widest ${msg.is_saved ? "text-yellow-500" : "text-white"}`}>
+                              {msg.is_saved ? "Secured Intelligence" : "Snapshot"}
+                            </p>
+                            <p className={`text-[8px] font-bold uppercase tracking-tighter ${msg.is_saved ? "text-yellow-500/60" : "text-purple-400"}`}>
+                              {msg.is_saved ? "Permanent Access" : (msg.is_viewed && !isMe ? "Already Viewed" : "One-Time Intelligence")}
+                            </p>
+                          </div>
+                          {msg.is_saved && (
+                            <div className="absolute -top-1 -right-1">
+                              <Sparkles className="w-4 h-4 text-yellow-500 animate-pulse" />
+                            </div>
+                          )}
                         </div>
-                        <div className="text-left">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-white">Snapshot</p>
-                          <p className="text-[8px] font-bold text-purple-400 uppercase tracking-tighter">
-                            {msg.is_viewed && !isMe ? "Already Viewed" : "One-Time Intelligence"}
-                          </p>
+                      </button>
+                    ) : msg.media_type === 'image' ? (
+
+                        <div className="group relative rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl">
+                          <img src={msg.media_url} alt="" className="max-w-full max-h-80 object-cover" />
+                          <div className="absolute bottom-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                            <button 
+                              onClick={() => toggleSaveSnapshot(msg)}
+                              className={`p-3 backdrop-blur-md rounded-2xl transition-all ${msg.is_saved ? 'bg-yellow-500 text-black shadow-[0_0_15px_rgba(234,179,8,0.5)]' : 'bg-black/60 text-white hover:bg-indigo-600'}`}
+                            >
+                              <Save className="w-4 h-4" />
+                            </button>
+                            <button 
+                              onClick={() => setShowSaveToVault(msg)}
+                              className="p-3 bg-black/60 backdrop-blur-md rounded-2xl text-white hover:bg-indigo-600"
+                            >
+                              <Shield className="w-4 h-4" />
+                            </button>
+                            <button 
+                              onClick={() => saveToDevice(msg.media_url, "nexus-intel")}
+                              className="p-3 bg-black/60 backdrop-blur-md rounded-2xl text-white hover:bg-indigo-600"
+                            >
+                              <Download className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    </button>
-                  ) : msg.media_type === 'image' ? (
-                      <div className="group relative rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl">
-                        <img src={msg.media_url} alt="" className="max-w-full max-h-80 object-cover" />
-                        <div className="absolute bottom-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                          <button 
-                            onClick={() => setShowSaveToVault(msg)}
-                            className="p-3 bg-black/60 backdrop-blur-md rounded-2xl text-white hover:bg-indigo-600"
-                          >
-                            <Shield className="w-4 h-4" />
-                          </button>
-                          <button 
-                            onClick={() => saveToDevice(msg.media_url, "nexus-intel")}
-                            className="p-3 bg-black/60 backdrop-blur-md rounded-2xl text-white hover:bg-indigo-600"
-                          >
-                            <Save className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
+
 
                     ) : msg.media_type === 'location' ? (
                       <div className={`p-5 rounded-[2rem] border transition-all ${
@@ -546,19 +581,35 @@ export function Chat({ session, privateKey, initialContact, isPartnerOnline, onB
                         </div>
                       </div>
                     ) : (
-                        <div className={`group/msg relative p-5 rounded-[2rem] text-sm font-medium leading-relaxed ${
-                        isMe 
-                          ? "bg-indigo-600 text-white shadow-xl shadow-indigo-600/10" 
-                          : "bg-white/[0.03] border border-white/5 text-white/90"
-                      }`}>
-                        {msg.encrypted_content}
-                        <button 
-                          onClick={() => deleteMessage(msg.id)}
-                          className={`absolute ${isMe ? '-left-10' : '-right-10'} top-1/2 -translate-y-1/2 p-2 text-white/10 hover:text-red-500 opacity-0 group-hover/msg:opacity-100 transition-all`}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                          <div className={`group/msg relative p-5 rounded-[2rem] text-sm font-medium leading-relaxed transition-all ${
+                          msg.is_saved 
+                            ? "bg-yellow-500/10 border border-yellow-500/50 text-yellow-500 shadow-[0_0_20px_rgba(234,179,8,0.1)]"
+                            : isMe 
+                            ? "bg-indigo-600 text-white shadow-xl shadow-indigo-600/10" 
+                            : "bg-white/[0.03] border border-white/5 text-white/90"
+                        }`}>
+                          {msg.encrypted_content}
+                          <div className={`absolute ${isMe ? '-left-16' : '-right-16'} top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover/msg:opacity-100 transition-all`}>
+                            <button 
+                              onClick={() => toggleSaveSnapshot(msg)}
+                              className={`p-2 rounded-xl transition-all ${msg.is_saved ? 'text-yellow-500 bg-yellow-500/10' : 'text-white/20 hover:text-white'}`}
+                            >
+                              <Save className="w-4 h-4" />
+                            </button>
+                            <button 
+                              onClick={() => deleteMessage(msg.id)}
+                              className="p-2 text-white/10 hover:text-red-500 transition-all"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                          {msg.is_saved && (
+                            <div className="absolute -top-1 -right-1">
+                              <Sparkles className="w-3 h-3 text-yellow-500 animate-pulse" />
+                            </div>
+                          )}
+                        </div>
+
                     )}
                       <div className="flex items-center gap-2 mt-2 px-2">
                         <span className="text-[7px] font-black uppercase tracking-widest text-white/10">
@@ -778,29 +829,40 @@ export function Chat({ session, privateKey, initialContact, isPartnerOnline, onB
                 )}
               </div>
 
-              <div className="p-10 bg-black/80 backdrop-blur-xl border-t border-white/5 flex items-center justify-between">
-                <div>
-                  <h4 className="text-xl font-black italic text-white uppercase tracking-tighter">Temporal Snapshot</h4>
-                  <p className="text-[10px] text-purple-400 font-bold uppercase tracking-widest mt-1 flex items-center gap-2">
-                    <AlertTriangle className="w-3 h-3" /> This intelligence will self-destruct upon closing
-                  </p>
+                <div className="p-10 bg-black/80 backdrop-blur-xl border-t border-white/5 flex items-center justify-between">
+                  <div>
+                    <h4 className={`text-xl font-black italic uppercase tracking-tighter ${showSnapshotView.is_saved ? "text-yellow-500" : "text-white"}`}>
+                      {showSnapshotView.is_saved ? "Secured Intelligence" : "Temporal Snapshot"}
+                    </h4>
+                    <p className={`text-[10px] font-bold uppercase tracking-widest mt-1 flex items-center gap-2 ${showSnapshotView.is_saved ? "text-yellow-500/60" : "text-purple-400"}`}>
+                      {showSnapshotView.is_saved ? (
+                        <><ShieldCheck className="w-3 h-3" /> Intelligence secured in local node</>
+                      ) : (
+                        <><AlertTriangle className="w-3 h-3" /> This intelligence will self-destruct upon closing</>
+                      )}
+                    </p>
+                  </div>
+                  <div className="flex gap-4">
+                    <Button 
+                      onClick={() => toggleSaveSnapshot(showSnapshotView)}
+                      variant="ghost" 
+                      className={`h-16 px-8 rounded-2xl font-black tracking-widest text-[10px] uppercase transition-all ${
+                        showSnapshotView.is_saved 
+                          ? "bg-yellow-500/10 text-yellow-500 border border-yellow-500/50 hover:bg-yellow-500/20" 
+                          : "bg-white/5 text-white/60 hover:bg-white/10"
+                      }`}
+                    >
+                      <Save className="w-4 h-4 mr-3" /> {showSnapshotView.is_saved ? "Secured" : "Save Intel"}
+                    </Button>
+                    <Button 
+                      onClick={closeSnapshot}
+                      className="h-16 px-10 bg-indigo-600 hover:bg-indigo-500 rounded-2xl font-black tracking-widest text-[10px] uppercase"
+                    >
+                      Close Protocol
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex gap-4">
-                  <Button 
-                    onClick={() => saveToDevice(showSnapshotView.media_url, "snapshot-intel")}
-                    variant="ghost" 
-                    className="h-16 px-8 bg-white/5 text-white/60 hover:bg-white/10 rounded-2xl font-black tracking-widest text-[10px] uppercase"
-                  >
-                    <Save className="w-4 h-4 mr-3" /> Save Intel
-                  </Button>
-                  <Button 
-                    onClick={() => setShowSnapshotView(null)}
-                    className="h-16 px-10 bg-indigo-600 hover:bg-indigo-500 rounded-2xl font-black tracking-widest text-[10px] uppercase"
-                  >
-                    Close Protocol
-                  </Button>
-                </div>
-              </div>
+
             </div>
           </motion.div>
         )}
