@@ -7,7 +7,8 @@ import {
     Send, Plus, Camera, Image as ImageIcon, MapPin, 
     Video, Mic, X, Download, Shield, AlertTriangle,
     Eye, EyeOff, Save, Trash2, ShieldCheck, Lock,
-    Sparkles, Zap, ChevronLeft, Phone, Check, CheckCheck, ArrowLeft, ArrowLeft as BackIcon
+    Sparkles, Zap, ChevronLeft, Phone, Check, CheckCheck, ArrowLeft, ArrowLeft as BackIcon,
+    MoreVertical, History, Clock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +40,12 @@ export function Chat({ session, privateKey, initialContact, isPartnerOnline, onB
     const [showSaveToVault, setShowSaveToVault] = useState<any>(null);
     const [vaultPassword, setVaultPassword] = useState("");
     const [lastReadTimestamp, setLastReadTimestamp] = useState<string | null>(null);
+    const [showSettings, setShowSettings] = useState(false);
+    const [chatSettings, setChatSettings] = useState({
+        delete_after_view: true,
+        delete_after_3_hours: true,
+        is_saved: false
+    });
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -170,6 +177,50 @@ export function Chat({ session, privateKey, initialContact, isPartnerOnline, onB
     };
 
     useEffect(() => {
+        if (initialContact && session.user) {
+            fetchChatSettings();
+        }
+    }, [initialContact, session.user]);
+
+    async function fetchChatSettings() {
+        const { data, error } = await supabase
+            .from("chat_settings")
+            .select("*")
+            .eq("user_id", session.user.id)
+            .eq("contact_id", initialContact.id)
+            .single();
+        
+        if (data) {
+            setChatSettings({
+                delete_after_view: data.delete_after_view ?? true,
+                delete_after_3_hours: data.delete_after_3_hours ?? true,
+                is_saved: data.is_saved ?? false
+            });
+        }
+    }
+
+    async function updateChatSetting(setting: string, value: boolean) {
+        const newSettings = { ...chatSettings, [setting]: value };
+        setChatSettings(newSettings);
+
+        const { error } = await supabase
+            .from("chat_settings")
+            .upsert({
+                user_id: session.user.id,
+                contact_id: initialContact.id,
+                [setting]: value,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'user_id,contact_id' });
+
+        if (error) {
+            toast.error("Failed to update protocol settings");
+            fetchChatSettings(); // Revert on error
+        } else {
+            toast.success("Intelligence protocol updated");
+        }
+    }
+
+    useEffect(() => {
       if (initialContact) {
         fetchMessages();
         const subscription = subscribeToMessages();
@@ -221,18 +272,15 @@ export function Chat({ session, privateKey, initialContact, isPartnerOnline, onB
       } else {
         setMessages(data || []);
         
-          // Mark unread messages as viewed
-          const unviewed = data?.filter(m => m.receiver_id === session.user.id && !m.is_viewed) || [];
-          if (unviewed.length > 0) {
-            const ids = unviewed.map(m => m.id);
-            await supabase.from("messages").update({ 
-              is_viewed: true, 
-              viewed_at: new Date().toISOString() 
-            }).in("id", ids);
-            
-            // Trigger cleanup immediately after marking as viewed
-            await supabase.rpc('purge_viewed_content');
-          }
+        // Mark unread messages as viewed
+        const unviewed = data?.filter(m => m.receiver_id === session.user.id && !m.is_viewed) || [];
+        if (unviewed.length > 0) {
+          const ids = unviewed.map(m => m.id);
+          await supabase.from("messages").update({ 
+            is_viewed: true, 
+            viewed_at: new Date().toISOString() 
+          }).in("id", ids);
+        }
       }
       setLoading(false);
     }
@@ -462,10 +510,77 @@ export function Chat({ session, privateKey, initialContact, isPartnerOnline, onB
           </div>
               </div>
           </div>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={() => onInitiateCall(initialContact, "voice")} className="text-white/20 hover:text-white hover:bg-white/5 rounded-xl"><Phone className="w-4 h-4" /></Button>
-          <Button variant="ghost" size="icon" onClick={() => onInitiateCall(initialContact, "video")} className="text-white/20 hover:text-white hover:bg-white/5 rounded-xl"><Video className="w-4 h-4" /></Button>
-        </div>
+          <div className="flex items-center gap-1 relative">
+            <Button variant="ghost" size="icon" onClick={() => onInitiateCall(initialContact, "voice")} className="text-white/20 hover:text-white hover:bg-white/5 rounded-xl"><Phone className="w-4 h-4" /></Button>
+            <Button variant="ghost" size="icon" onClick={() => onInitiateCall(initialContact, "video")} className="text-white/20 hover:text-white hover:bg-white/5 rounded-xl"><Video className="w-4 h-4" /></Button>
+            <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setShowSettings(!showSettings)} 
+                className={`text-white/20 hover:text-white hover:bg-white/5 rounded-xl ${showSettings ? 'bg-white/10 text-white' : ''}`}
+            >
+                <MoreVertical className="w-4 h-4" />
+            </Button>
+
+            <AnimatePresence>
+                {showSettings && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        className="absolute top-14 right-0 w-72 bg-[#0a0a0a] border border-white/10 rounded-[2rem] p-5 shadow-2xl z-[100] backdrop-blur-xl"
+                    >
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-3 pb-4 border-b border-white/5">
+                                <Shield className="w-4 h-4 text-indigo-400" />
+                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white">Chat Protocols</span>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between group cursor-pointer" onClick={() => updateChatSetting('delete_after_view', !chatSettings.delete_after_view)}>
+                                    <div className="flex items-center gap-3">
+                                        <Eye className={`w-4 h-4 ${chatSettings.delete_after_view ? 'text-indigo-400' : 'text-zinc-600'}`} />
+                                        <div className="flex flex-col">
+                                            <span className="text-[9px] font-bold uppercase text-white">Auto-Delete after View</span>
+                                            <span className="text-[7px] text-zinc-500 uppercase tracking-tighter">Instant purge on read</span>
+                                        </div>
+                                    </div>
+                                    <div className={`w-8 h-4 rounded-full transition-colors relative ${chatSettings.delete_after_view ? 'bg-indigo-600' : 'bg-zinc-800'}`}>
+                                        <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${chatSettings.delete_after_view ? 'left-4.5' : 'left-0.5'}`} />
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-between group cursor-pointer" onClick={() => updateChatSetting('delete_after_3_hours', !chatSettings.delete_after_3_hours)}>
+                                    <div className="flex items-center gap-3">
+                                        <Clock className={`w-4 h-4 ${chatSettings.delete_after_3_hours ? 'text-indigo-400' : 'text-zinc-600'}`} />
+                                        <div className="flex flex-col">
+                                            <span className="text-[9px] font-bold uppercase text-white">3h Auto-Purge</span>
+                                            <span className="text-[7px] text-zinc-500 uppercase tracking-tighter">System-wide cleanup</span>
+                                        </div>
+                                    </div>
+                                    <div className={`w-8 h-4 rounded-full transition-colors relative ${chatSettings.delete_after_3_hours ? 'bg-indigo-600' : 'bg-zinc-800'}`}>
+                                        <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${chatSettings.delete_after_3_hours ? 'left-4.5' : 'left-0.5'}`} />
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-between group cursor-pointer" onClick={() => updateChatSetting('is_saved', !chatSettings.is_saved)}>
+                                    <div className="flex items-center gap-3">
+                                        <Save className={`w-4 h-4 ${chatSettings.is_saved ? 'text-emerald-400' : 'text-zinc-600'}`} />
+                                        <div className="flex flex-col">
+                                            <span className="text-[9px] font-bold uppercase text-white">Save Chat</span>
+                                            <span className="text-[7px] text-zinc-500 uppercase tracking-tighter">Bypass auto-purge</span>
+                                        </div>
+                                    </div>
+                                    <div className={`w-8 h-4 rounded-full transition-colors relative ${chatSettings.is_saved ? 'bg-emerald-600' : 'bg-zinc-800'}`}>
+                                        <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${chatSettings.is_saved ? 'left-4.5' : 'left-0.5'}`} />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+          </div>
       </header>
 
       {/* Messages */}

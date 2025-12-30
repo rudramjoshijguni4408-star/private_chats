@@ -304,7 +304,7 @@ export function UserDashboardView({ session, privateKey }: UserDashboardViewProp
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setMobileMenuOpen(false)} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] lg:hidden" />
             <motion.div initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }} transition={{ type: "spring", damping: 25, stiffness: 200 }} className="fixed top-0 left-0 bottom-0 w-[80%] max-w-sm bg-[#050505] border-r border-white/5 z-[101] lg:hidden p-6 flex flex-col">
               <div className="flex items-center justify-between mb-12">
-                  <h2 className="text-xl font-black italic tracking-tighter uppercase font-accent">Chatify <span className="text-indigo-500">Core</span></h2>
+                <h2 className="text-xl font-black italic tracking-tighter uppercase font-accent">Chatify <span className="text-indigo-500">Core</span></h2>
                 <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(false)} className="text-white/20 hover:text-white bg-white/5 rounded-xl"><X className="w-5 h-5" /></Button>
               </div>
               <div className="flex items-center gap-4 mb-12 p-4 bg-white/[0.02] border border-white/5 rounded-[2rem]">
@@ -405,7 +405,7 @@ export function UserDashboardView({ session, privateKey }: UserDashboardViewProp
           <header className="lg:hidden h-20 border-b border-white/5 bg-[#050505]/80 backdrop-blur-3xl flex items-center justify-between px-6 z-30 shrink-0">
             <div className="flex items-center gap-4">
               <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(true)} className="text-white/20"><Menu className="w-6 h-6" /></Button>
-              <h1 className="text-lg font-black italic tracking-tighter uppercase font-accent">Orchids <span className="text-indigo-500">Core</span></h1>
+              <h1 className="text-lg font-black italic tracking-tighter uppercase font-accent">Chatify <span className="text-indigo-500">Core</span></h1>
             </div>
             <AvatarDisplay profile={myProfile} className="h-10 w-10" />
           </header>
