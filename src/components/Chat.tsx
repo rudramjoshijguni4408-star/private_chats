@@ -6,9 +6,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
     Send, Plus, Camera, Image as ImageIcon, MapPin, 
     Video, Mic, X, Download, Shield, AlertTriangle,
-    Eye, EyeOff, Save, Trash2, ShieldCheck, Lock, MoreVertical,
-    Sparkles, Zap, ChevronLeft, Phone, Check, CheckCheck, ArrowLeft, ArrowLeft as BackIcon,
-    History, Clock3
+    Eye, EyeOff, Save, Trash2, ShieldCheck, Lock,
+    Sparkles, Zap, ChevronLeft, Phone, Check, CheckCheck, ArrowLeft, ArrowLeft as BackIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,56 +38,8 @@ export function Chat({ session, privateKey, initialContact, isPartnerOnline, onB
     const [showSnapshotView, setShowSnapshotView] = useState<any>(null);
     const [showSaveToVault, setShowSaveToVault] = useState<any>(null);
     const [vaultPassword, setVaultPassword] = useState("");
-      const [lastReadTimestamp, setLastReadTimestamp] = useState<string | null>(null);
-      const [showChatSettings, setShowChatSettings] = useState(false);
-      const [chatSettings, setChatSettings] = useState({
-        is_saved: false,
-        delete_after_view: true,
-        delete_after_3_hours: true
-      });
-      const messagesEndRef = useRef<HTMLDivElement>(null);
-
-      useEffect(() => {
-        if (initialContact && session.user) {
-          fetchChatSettings();
-        }
-      }, [initialContact, session.user]);
-
-      async function fetchChatSettings() {
-        const { data, error } = await supabase
-          .from("chat_settings")
-          .select("*")
-          .or(`and(user_id.eq.${session.user.id},contact_id.eq.${initialContact.id}),and(user_id.eq.${initialContact.id},contact_id.eq.${session.user.id})`)
-          .limit(1);
-
-        if (data && data.length > 0) {
-          setChatSettings({
-            is_saved: data[0].is_saved,
-            delete_after_view: data[0].delete_after_view,
-            delete_after_3_hours: data[0].delete_after_3_hours
-          });
-        }
-      }
-
-      async function updateChatSetting(key: string, value: boolean) {
-        const newSettings = { ...chatSettings, [key]: value };
-        setChatSettings(newSettings);
-
-        // Update or Insert settings
-        const { error } = await supabase
-          .from("chat_settings")
-          .upsert({
-            user_id: session.user.id,
-            contact_id: initialContact.id,
-            [key]: value
-          }, { onConflict: 'user_id,contact_id' });
-
-        if (error) {
-          toast.error("Failed to update protocol settings");
-        } else {
-          toast.success("Intelligence protocol updated");
-        }
-      }
+    const [lastReadTimestamp, setLastReadTimestamp] = useState<string | null>(null);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
       const handleBlur = () => setIsFocused(false);
@@ -508,89 +459,10 @@ export function Chat({ session, privateKey, initialContact, isPartnerOnline, onB
           </div>
               </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={() => onInitiateCall(initialContact, "voice")} className="text-white/20 hover:text-white hover:bg-white/5 rounded-xl"><Phone className="w-4 h-4" /></Button>
-            <Button variant="ghost" size="icon" onClick={() => onInitiateCall(initialContact, "video")} className="text-white/20 hover:text-white hover:bg-white/5 rounded-xl"><Video className="w-4 h-4" /></Button>
-            <div className="relative">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => setShowChatSettings(!showChatSettings)} 
-                className={`text-white/20 hover:text-white hover:bg-white/5 rounded-xl transition-all ${showChatSettings ? 'bg-white/10 text-white' : ''}`}
-              >
-                <MoreVertical className="w-4 h-4" />
-              </Button>
-              
-              <AnimatePresence>
-                {showChatSettings && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setShowChatSettings(false)} />
-                    <motion.div 
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className="absolute right-0 top-12 w-72 bg-[#0a0a0a] border border-white/10 rounded-[2rem] p-4 shadow-2xl z-50 overflow-hidden"
-                    >
-                      <div className="space-y-2">
-                        <div className="px-4 py-2 mb-2">
-                          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">Protocol Settings</p>
-                        </div>
-                        
-                        <button 
-                          onClick={() => updateChatSetting('is_saved', !chatSettings.is_saved)}
-                          className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all ${chatSettings.is_saved ? 'bg-indigo-600/20 border border-indigo-500/30' : 'bg-white/[0.02] border border-white/5 hover:bg-white/[0.05]'}`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <Save className={`w-4 h-4 ${chatSettings.is_saved ? 'text-indigo-400' : 'text-white/20'}`} />
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-white">Save Chat</span>
-                          </div>
-                          <div className={`w-8 h-4 rounded-full relative transition-colors ${chatSettings.is_saved ? 'bg-indigo-500' : 'bg-white/10'}`}>
-                            <div className={`absolute top-1 w-2 h-2 rounded-full bg-white transition-all ${chatSettings.is_saved ? 'right-1' : 'left-1'}`} />
-                          </div>
-                        </button>
-
-                        <button 
-                          onClick={() => updateChatSetting('delete_after_view', !chatSettings.delete_after_view)}
-                          className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all ${chatSettings.delete_after_view ? 'bg-emerald-600/20 border border-emerald-500/30' : 'bg-white/[0.02] border border-white/5 hover:bg-white/[0.05]'}`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <History className={`w-4 h-4 ${chatSettings.delete_after_view ? 'text-emerald-400' : 'text-white/20'}`} />
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-white">Auto-Delete (View)</span>
-                          </div>
-                          <div className={`w-8 h-4 rounded-full relative transition-colors ${chatSettings.delete_after_view ? 'bg-emerald-500' : 'bg-white/10'}`}>
-                            <div className={`absolute top-1 w-2 h-2 rounded-full bg-white transition-all ${chatSettings.delete_after_view ? 'right-1' : 'left-1'}`} />
-                          </div>
-                        </button>
-
-                        <button 
-                          onClick={() => updateChatSetting('delete_after_3_hours', !chatSettings.delete_after_3_hours)}
-                          className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all ${chatSettings.delete_after_3_hours ? 'bg-orange-600/20 border border-orange-500/30' : 'bg-white/[0.02] border border-white/5 hover:bg-white/[0.05]'}`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <Clock3 className={`w-4 h-4 ${chatSettings.delete_after_3_hours ? 'text-orange-400' : 'text-white/20'}`} />
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-white">3h Auto-Purge</span>
-                          </div>
-                          <div className={`w-8 h-4 rounded-full relative transition-colors ${chatSettings.delete_after_3_hours ? 'bg-orange-500' : 'bg-white/10'}`}>
-                            <div className={`absolute top-1 w-2 h-2 rounded-full bg-white transition-all ${chatSettings.delete_after_3_hours ? 'right-1' : 'left-1'}`} />
-                          </div>
-                        </button>
-
-                        <div className="p-4 bg-white/[0.01] border border-white/5 rounded-2xl mt-4">
-                          <div className="flex items-center gap-3 mb-2">
-                            <ShieldCheck className="w-3 h-3 text-indigo-400" />
-                            <span className="text-[8px] font-black uppercase tracking-[0.2em] text-white/40">Encryption Status</span>
-                          </div>
-                          <p className="text-[7px] font-medium uppercase tracking-widest text-white/20 leading-relaxed">
-                            Quantum-safe E2EE active. All packets are hardware-encrypted on this node before deployment.
-                          </p>
-                        </div>
-                      </div>
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" onClick={() => onInitiateCall(initialContact, "voice")} className="text-white/20 hover:text-white hover:bg-white/5 rounded-xl"><Phone className="w-4 h-4" /></Button>
+          <Button variant="ghost" size="icon" onClick={() => onInitiateCall(initialContact, "video")} className="text-white/20 hover:text-white hover:bg-white/5 rounded-xl"><Video className="w-4 h-4" /></Button>
+        </div>
       </header>
 
       {/* Messages */}
