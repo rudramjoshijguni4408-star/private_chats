@@ -136,7 +136,7 @@ export default function AdminPage() {
 
     try {
       const { error } = await supabase.auth.signInWithPassword({
-        email: email === 'admin' ? 'admin@orchids.dev' : email,
+        email: email === 'admin' ? 'admin@chatify.dev' : email,
         password,
       });
 
@@ -195,7 +195,7 @@ export default function AdminPage() {
   }
 
   async function handleQuickAccess() {
-    const adminEmail = 'admin@orchids.dev';
+    const adminEmail = 'admin@chatify.dev';
     const adminPassword = 'Admin#Secure$99Node!2024';
     
     setEmail(adminEmail);

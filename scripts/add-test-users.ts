@@ -12,10 +12,10 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
 
 async function createTestUsers() {
   const users = [
-    { email: 'admin@orchids.dev', password: 'adminpassword123', username: 'Admin_Core', is_admin: true, is_approved: true, full_name: 'System Administrator' },
-    { email: 'user1@orchids.dev', password: 'userpassword123', username: 'Alex_Pro', is_admin: false, is_approved: true, full_name: 'Alex Johnson' },
-    { email: 'user2@orchids.dev', password: 'userpassword123', username: 'Sophia_Dev', is_admin: false, is_approved: true, full_name: 'Sophia Chen' },
-    { email: 'user3@orchids.dev', password: 'userpassword123', username: 'Marcus_Ops', is_admin: false, is_approved: true, full_name: 'Marcus Thorne' },
+    { email: 'admin@chatify.dev', password: 'adminpassword123', username: 'Admin_Core', is_admin: true, is_approved: true, full_name: 'System Administrator' },
+    { email: 'user1@chatify.dev', password: 'userpassword123', username: 'Alex_Pro', is_admin: false, is_approved: true, full_name: 'Alex Johnson' },
+    { email: 'user2@chatify.dev', password: 'userpassword123', username: 'Sophia_Dev', is_admin: false, is_approved: true, full_name: 'Sophia Chen' },
+    { email: 'user3@chatify.dev', password: 'userpassword123', username: 'Marcus_Ops', is_admin: false, is_approved: true, full_name: 'Marcus Thorne' },
   ];
 
   console.log('Creating test users...');
