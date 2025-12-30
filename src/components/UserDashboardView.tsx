@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AvatarDisplay } from "@/components/AvatarDisplay";
-import { ChatifyWindow } from "@/components/ChatifyWindow";
+import { ChatifyWindow as Chat } from "@/components/ChatifyWindow";
 import { Stories } from "@/components/Stories";
 import { ProfileSettings } from "@/components/ProfileSettings";
 import { VideoCall } from "@/components/VideoCall";
@@ -519,13 +519,13 @@ export function UserDashboardView({ session, privateKey }: UserDashboardViewProp
                             </div>
                           </div>
                         ) : (
-                            <ChatifyWindow 
-                                session={session} 
-                                privateKey={privateKey} 
-                                initialContact={selectedContact} 
-                                isPartnerOnline={onlineUsers.has(selectedContact.id)}
-                                onBack={() => setSelectedContact(null)}
-                                onInitiateCall={(c, m) => setActiveCall({ contact: c, mode: m, isInitiator: true })} 
+                            <Chat 
+                              session={session} 
+                              privateKey={privateKey} 
+                              initialContact={selectedContact} 
+                              isPartnerOnline={onlineUsers.has(selectedContact.id)}
+                              onBack={() => setSelectedContact(null)}
+                              onInitiateCall={(c, m) => setActiveCall({ contact: c, mode: m, isInitiator: true })} 
                             />
                         )}
                       </motion.div>
