@@ -298,65 +298,65 @@ export function UserDashboardView({ session, privateKey }: UserDashboardViewProp
 
   return (
     <div className="flex h-[100dvh] bg-[#030303] text-white overflow-hidden font-sans selection:bg-indigo-500/30">
-      <AnimatePresence>
-        {mobileMenuOpen && (
-          <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setMobileMenuOpen(false)} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] lg:hidden" />
-            <motion.div initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }} transition={{ type: "spring", damping: 25, stiffness: 200 }} className="fixed top-0 left-0 bottom-0 w-[80%] max-w-sm bg-[#050505] border-r border-white/5 z-[101] lg:hidden p-6 flex flex-col">
-              <div className="flex items-center justify-between mb-12">
-                <h2 className="text-xl font-black italic tracking-tighter uppercase font-accent">Orchids <span className="text-indigo-500">Core</span></h2>
-                <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(false)} className="text-white/20 hover:text-white bg-white/5 rounded-xl"><X className="w-5 h-5" /></Button>
-              </div>
-              <div className="flex items-center gap-4 mb-12 p-4 bg-white/[0.02] border border-white/5 rounded-[2rem]">
-                <AvatarDisplay profile={myProfile} className="h-12 w-12" />
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm uppercase tracking-tight truncate leading-tight font-accent">{myProfile.username}</p>
-                  <p className="text-[9px] font-medium text-emerald-500/80 uppercase tracking-wider mt-0.5 font-sans">Online</p>
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div key="mobile-menu-wrapper" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <motion.div key="mobile-menu-overlay" onClick={() => setMobileMenuOpen(false)} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] lg:hidden" />
+              <motion.div key="mobile-menu-content" initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }} transition={{ type: "spring", damping: 25, stiffness: 200 }} className="fixed top-0 left-0 bottom-0 w-[80%] max-w-sm bg-[#050505] border-r border-white/5 z-[101] lg:hidden p-6 flex flex-col">
+                <div className="flex items-center justify-between mb-12">
+                  <h2 className="text-xl font-black italic tracking-tighter uppercase font-accent">Orchids <span className="text-indigo-500">Core</span></h2>
+                  <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(false)} className="text-white/20 hover:text-white bg-white/5 rounded-xl"><X className="w-5 h-5" /></Button>
                 </div>
-              </div>
-                <nav className="flex-1 space-y-1">
-                  {navItems.map((item) => {
-                    const isActive = activeView === item.id;
-                    return (
-                      <motion.button 
-                        key={item.id} 
-                        whileTap={{ scale: 0.98 }} 
-                        onClick={() => { 
-                          handleNavClick(item.id as ActiveView); 
-                          setMobileMenuOpen(false); 
-                        }} 
-                          className={`w-full flex items-center gap-4 px-5 py-4 rounded-xl transition-all relative group overflow-hidden ${
-                            isActive 
-                              ? 'text-white bg-white/5 border border-white/10 shadow-[inset_0_0_20px_rgba(79,70,229,0.1)]' 
-                              : 'text-white/30 hover:text-white hover:bg-white/[0.03]'
-                          }`}
-                        >
-                          {isActive && (
-                            <motion.div 
-                              layoutId="mobileIndicator" 
-                              className="absolute left-0 top-0 bottom-0 w-full z-20 pointer-events-none" 
-                              initial={false}
-                              style={{ 
-                                background: 'linear-gradient(90deg, rgba(79, 70, 229, 0.4) 0%, rgba(79, 70, 229, 0.1) 40%, rgba(79, 70, 229, 0) 100%)',
-                                borderLeft: '3px solid #6366f1',
-                                boxShadow: 'inset 10px 0 20px -10px rgba(79, 70, 229, 0.5)'
-                              }}
-                              transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                            />
-                          )}
-                          
-                          <item.icon className={`w-4 h-4 transition-transform relative z-10 ${isActive ? 'text-indigo-400 scale-110' : 'text-white/20 group-hover:text-white/40'}`} />
-                          <span className="text-[10px] font-bold tracking-widest uppercase leading-none relative z-10 font-accent">{item.label}</span>
-                        </motion.button>
+                <div className="flex items-center gap-4 mb-12 p-4 bg-white/[0.02] border border-white/5 rounded-[2rem]">
+                  <AvatarDisplay profile={myProfile} className="h-12 w-12" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm uppercase tracking-tight truncate leading-tight font-accent">{myProfile.username}</p>
+                    <p className="text-[9px] font-medium text-emerald-500/80 uppercase tracking-wider mt-0.5 font-sans">Online</p>
+                  </div>
+                </div>
+                  <nav className="flex-1 space-y-1">
+                    {navItems.map((item) => {
+                      const isActive = activeView === item.id;
+                      return (
+                        <motion.button 
+                          key={item.id} 
+                          whileTap={{ scale: 0.98 }} 
+                          onClick={() => { 
+                            handleNavClick(item.id as ActiveView); 
+                            setMobileMenuOpen(false); 
+                          }} 
+                            className={`w-full flex items-center gap-4 px-5 py-4 rounded-xl transition-all relative group overflow-hidden ${
+                              isActive 
+                                ? 'text-white bg-white/5 border border-white/10 shadow-[inset_0_0_20px_rgba(79,70,229,0.1)]' 
+                                : 'text-white/30 hover:text-white hover:bg-white/[0.03]'
+                            }`}
+                          >
+                            {isActive && (
+                              <motion.div 
+                                layoutId="mobileIndicator" 
+                                className="absolute left-0 top-0 bottom-0 w-full z-20 pointer-events-none" 
+                                initial={false}
+                                style={{ 
+                                  background: 'linear-gradient(90deg, rgba(79, 70, 229, 0.4) 0%, rgba(79, 70, 229, 0.1) 40%, rgba(79, 70, 229, 0) 100%)',
+                                  borderLeft: '3px solid #6366f1',
+                                  boxShadow: 'inset 10px 0 20px -10px rgba(79, 70, 229, 0.5)'
+                                }}
+                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                              />
+                            )}
+                            
+                            <item.icon className={`w-4 h-4 transition-transform relative z-10 ${isActive ? 'text-indigo-400 scale-110' : 'text-white/20 group-hover:text-white/40'}`} />
+                            <span className="text-[10px] font-bold tracking-widest uppercase leading-none relative z-10 font-accent">{item.label}</span>
+                          </motion.button>
 
-                    );
-                  })}
-                </nav>
-              <Button variant="ghost" onClick={() => supabase.auth.signOut()} className="mt-auto w-full justify-start gap-4 text-white/20 hover:text-red-400 hover:bg-red-500/10 rounded-[2rem] h-14 px-6 font-accent"><LogOut className="w-5 h-5" /><span className="text-[11px] font-black uppercase tracking-[0.2em]">Sign Out</span></Button>
+                      );
+                    })}
+                  </nav>
+                <Button variant="ghost" onClick={() => supabase.auth.signOut()} className="mt-auto w-full justify-start gap-4 text-white/20 hover:text-red-400 hover:bg-red-500/10 rounded-[2rem] h-14 px-6 font-accent"><LogOut className="w-5 h-5" /><span className="text-[11px] font-black uppercase tracking-[0.2em]">Sign Out</span></Button>
+              </motion.div>
             </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>
 
       <motion.aside initial={{ x: -100, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className={`${sidebarOpen ? 'w-80' : 'w-24'} border-r border-white/5 bg-[#050505]/80 backdrop-blur-3xl flex flex-col transition-all duration-500 hidden lg:flex relative z-40 h-full overflow-hidden`}>
         <div className={`p-6 border-b border-white/5 shrink-0 flex items-center ${sidebarOpen ? 'justify-between' : 'justify-center'}`}>
@@ -560,21 +560,25 @@ export function UserDashboardView({ session, privateKey }: UserDashboardViewProp
             </AnimatePresence>
           </main>
 
-          <AnimatePresence>
-            {activeCall && <VideoCall userId={session.user.id} contact={activeCall.contact} callType={activeCall.mode} isInitiator={activeCall.isInitiator} incomingSignal={activeCall.incomingSignal} onClose={() => setActiveCall(null)} />}
-            {incomingCall && !activeCall && (
-              <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/60 backdrop-blur-md">
-                <div className="bg-[#0a0a0a] border border-white/10 rounded-[3rem] p-10 max-w-sm w-full text-center space-y-8">
-                  <AvatarDisplay profile={incomingCall.caller} className="h-32 w-32 mx-auto" />
-                  <h3 className="text-4xl font-black italic uppercase font-accent">{incomingCall.caller.username}</h3>
-                  <div className="flex gap-4">
-                    <Button onClick={() => setIncomingCall(null)} className="flex-1 bg-red-600">Decline</Button>
-                    <Button onClick={() => { setActiveCall({ contact: incomingCall.caller, mode: incomingCall.call_mode, isInitiator: false, incomingSignal: JSON.parse(incomingCall.signal_data) }); setIncomingCall(null); }} className="flex-1 bg-emerald-600">Accept</Button>
+            <AnimatePresence>
+              {activeCall && (
+                <motion.div key="active-call-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                  <VideoCall userId={session.user.id} contact={activeCall.contact} callType={activeCall.mode} isInitiator={activeCall.isInitiator} incomingSignal={activeCall.incomingSignal} onClose={() => setActiveCall(null)} />
+                </motion.div>
+              )}
+              {incomingCall && !activeCall && (
+                <motion.div key="incoming-call-modal" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/60 backdrop-blur-md">
+                  <div className="bg-[#0a0a0a] border border-white/10 rounded-[3rem] p-10 max-w-sm w-full text-center space-y-8">
+                    <AvatarDisplay profile={incomingCall.caller} className="h-32 w-32 mx-auto" />
+                    <h3 className="text-4xl font-black italic uppercase font-accent">{incomingCall.caller.username}</h3>
+                    <div className="flex gap-4">
+                      <Button onClick={() => setIncomingCall(null)} className="flex-1 bg-red-600">Decline</Button>
+                      <Button onClick={() => { setActiveCall({ contact: incomingCall.caller, mode: incomingCall.call_mode, isInitiator: false, incomingSignal: JSON.parse(incomingCall.signal_data) }); setIncomingCall(null); }} className="flex-1 bg-emerald-600">Accept</Button>
+                    </div>
                   </div>
-                </div>
-              </div>
-            )}
-          </AnimatePresence>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             <nav className={`lg:hidden fixed bottom-0 left-0 right-0 border-t border-white/5 bg-[#050505]/95 backdrop-blur-3xl px-4 py-4 flex justify-around items-center z-50 rounded-t-[2.5rem] pb-safe transition-all ${ (activeView === 'chat' && selectedContact) ? 'translate-y-full' : ''}`}>
               {navItems.map(item => {
