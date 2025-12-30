@@ -68,19 +68,7 @@ export function VideoCall({
     }
   };
 
-    useEffect(() => {
-      if (remoteStream && userVideo.current) {
-        userVideo.current.srcObject = remoteStream;
-      }
-    }, [remoteStream]);
-
-    useEffect(() => {
-      if (stream && myVideo.current) {
-        myVideo.current.srcObject = stream;
-      }
-    }, [stream]);
-
-    const createPeerConnection = useCallback((localStream: MediaStream) => {
+  const createPeerConnection = useCallback((localStream: MediaStream) => {
     const pc = new RTCPeerConnection({
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },

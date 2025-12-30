@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { AvatarDisplay } from "./AvatarDisplay";
-import { CameraCapture } from "./CameraCapture";
 
 interface ChatProps {
   session: any;
@@ -37,7 +36,6 @@ export function Chat({ session, privateKey, initialContact, isPartnerOnline, onB
   }>({ isOnline: false, isInChat: false, isTyping: false });
   const [isFocused, setIsFocused] = useState(true);
     const [showSnapshotView, setShowSnapshotView] = useState<any>(null);
-    const [showCamera, setShowCamera] = useState(false);
     const [showSaveToVault, setShowSaveToVault] = useState<any>(null);
     const [vaultPassword, setVaultPassword] = useState("");
     const [lastReadTimestamp, setLastReadTimestamp] = useState<string | null>(null);
@@ -316,32 +314,7 @@ export function Chat({ session, privateKey, initialContact, isPartnerOnline, onB
       }
     }
 
-    const handleCameraCapture = async (blob: Blob) => {
-      const fileName = `${Math.random()}.jpg`;
-      const filePath = `chat/${session.user.id}/${fileName}`;
-  
-      toast.loading("Securing snapshot...");
-  
-      const { error: uploadError } = await supabase.storage
-        .from("chat-media")
-        .upload(filePath, blob);
-  
-      if (uploadError) {
-        toast.dismiss();
-        toast.error("Upload failed");
-        return;
-      }
-  
-      const { data: { publicUrl } } = supabase.storage
-        .from("chat-media")
-        .getPublicUrl(filePath);
-  
-      toast.dismiss();
-      await sendMessage("snapshot", publicUrl);
-      toast.success("Snapshot deployed");
-    };
-
-    const handleLiveLocation = async () => {
+  const handleLiveLocation = async () => {
     if (!navigator.geolocation) {
       toast.error("Geolocation is not supported by your node");
       return;
@@ -554,30 +527,7 @@ export function Chat({ session, privateKey, initialContact, isPartnerOnline, onB
                         </div>
                       </div>
 
-                      ) : msg.media_type === 'video' ? (
-                        <div className="group relative rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl bg-black">
-                          <video src={msg.media_url} controls className="max-w-full max-h-80" />
-                          <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-all">
-                            <button 
-                              onClick={() => saveToDevice(msg.media_url, "nexus-video")}
-                              className="p-3 bg-black/60 backdrop-blur-md rounded-2xl text-white hover:bg-indigo-600"
-                            >
-                              <Save className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-
-                      ) : msg.media_type === 'audio' ? (
-                        <div className={`p-4 rounded-2xl border ${isMe ? "bg-indigo-600 border-indigo-500" : "bg-white/[0.03] border-white/5"}`}>
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
-                              <Mic className="w-5 h-5 text-white" />
-                            </div>
-                            <audio src={msg.media_url} controls className="h-8 brightness-90 contrast-125" />
-                          </div>
-                        </div>
-
-                      ) : msg.media_type === 'location' ? (
+                    ) : msg.media_type === 'location' ? (
                       <div className={`p-5 rounded-[2rem] border transition-all ${
                         isMe ? "bg-emerald-600 border-emerald-500 shadow-lg shadow-emerald-600/20" : "bg-white/[0.03] border-white/5"
                       }`}>
@@ -729,13 +679,11 @@ export function Chat({ session, privateKey, initialContact, isPartnerOnline, onB
                       <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, false, "image")} />
                     </label>
                     
-                      <button 
-                        onClick={() => setShowCamera(true)}
-                        className="flex flex-col items-center justify-center p-4 bg-purple-600/5 border border-purple-500/20 rounded-2xl hover:bg-purple-600/20 hover:border-purple-500/40 transition-all cursor-pointer group"
-                      >
-                        <Camera className="w-6 h-6 text-purple-400 mb-2 group-hover:scale-110 transition-transform" />
-                        <span className="text-[8px] font-black uppercase tracking-widest text-white/40">Snapshot</span>
-                      </button>
+                    <label className="flex flex-col items-center justify-center p-4 bg-purple-600/5 border border-purple-500/20 rounded-2xl hover:bg-purple-600/20 hover:border-purple-500/40 transition-all cursor-pointer group">
+                      <Camera className="w-6 h-6 text-purple-400 mb-2 group-hover:scale-110 transition-transform" />
+                      <span className="text-[8px] font-black uppercase tracking-widest text-white/40">Snapshot</span>
+                      <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, true, "image")} />
+                    </label>
 
                     <label className="flex flex-col items-center justify-center p-4 bg-white/[0.02] border border-white/5 rounded-2xl hover:bg-indigo-600/10 hover:border-indigo-500/30 transition-all cursor-pointer group">
                       <Video className="w-6 h-6 text-blue-400 mb-2 group-hover:scale-110 transition-transform" />
@@ -845,28 +793,18 @@ export function Chat({ session, privateKey, initialContact, isPartnerOnline, onB
                   >
                     <Save className="w-4 h-4 mr-3" /> Save Intel
                   </Button>
-                    <Button 
-                      onClick={closeSnapshot}
-                      className="h-16 px-10 bg-indigo-600 hover:bg-indigo-500 rounded-2xl font-black tracking-widest text-[10px] uppercase"
-                    >
-                      Close Protocol
-                    </Button>
-                  </div>
+                  <Button 
+                    onClick={() => setShowSnapshotView(null)}
+                    className="h-16 px-10 bg-indigo-600 hover:bg-indigo-500 rounded-2xl font-black tracking-widest text-[10px] uppercase"
+                  >
+                    Close Protocol
+                  </Button>
                 </div>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {showCamera && (
-            <CameraCapture 
-              onCapture={handleCameraCapture}
-              onClose={() => setShowCamera(false)}
-            />
-          )}
-        </AnimatePresence>
-      </div>
-    );
-  }
-
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
