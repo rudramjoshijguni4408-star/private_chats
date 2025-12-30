@@ -221,15 +221,18 @@ export function Chat({ session, privateKey, initialContact, isPartnerOnline, onB
       } else {
         setMessages(data || []);
         
-        // Mark unread messages as viewed
-        const unviewed = data?.filter(m => m.receiver_id === session.user.id && !m.is_viewed) || [];
-        if (unviewed.length > 0) {
-          const ids = unviewed.map(m => m.id);
-          await supabase.from("messages").update({ 
-            is_viewed: true, 
-            viewed_at: new Date().toISOString() 
-          }).in("id", ids);
-        }
+          // Mark unread messages as viewed
+          const unviewed = data?.filter(m => m.receiver_id === session.user.id && !m.is_viewed) || [];
+          if (unviewed.length > 0) {
+            const ids = unviewed.map(m => m.id);
+            await supabase.from("messages").update({ 
+              is_viewed: true, 
+              viewed_at: new Date().toISOString() 
+            }).in("id", ids);
+            
+            // Trigger cleanup immediately after marking as viewed
+            await supabase.rpc('purge_viewed_content');
+          }
       }
       setLoading(false);
     }

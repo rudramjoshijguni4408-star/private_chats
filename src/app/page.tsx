@@ -253,9 +253,10 @@ export default function Home() {
   return (
     <main className="min-h-[100dvh] bg-[#010101] text-foreground overflow-hidden relative selection:bg-indigo-500/30">
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-10%] left-[-10%] w-[1000px] h-[1000px] bg-indigo-600/5 blur-[120px] rounded-full" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[1000px] h-[1000px] bg-purple-600/5 blur-[120px] rounded-full" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,rgba(79,70,229,0.02)_0%,transparent_70%)]" />
+        <div className="absolute top-[-10%] left-[-10%] w-[1000px] h-[1000px] bg-indigo-600/10 blur-[250px] rounded-full" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[1000px] h-[1000px] bg-purple-600/5 blur-[250px] rounded-full" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,rgba(79,70,229,0.03)_0%,transparent_70%)]" />
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.04] contrast-150 brightness-125" />
       </div>
 
       <AnimatePresence mode="wait">
